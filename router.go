@@ -10,8 +10,8 @@ import (
 	"sort"
 	"strings"
 	"sync"
-
 	"github.com/valyala/fasthttp"
+	"os"
 )
 
 type (
@@ -66,6 +66,16 @@ func New() *Router {
 	}
 	return r
 }
+
+func Default() *Router {
+	r := New()
+	//panic
+	r.Use(Panic(os.Stderr))
+	//logger
+	r.Use(Logger(os.Stdout))
+	return r
+}
+
 
 // HandleRequest handles the HTTP request.
 func (r *Router) HandleRequest(ctx *fasthttp.RequestCtx) {
