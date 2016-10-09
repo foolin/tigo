@@ -1,7 +1,6 @@
 package tigo
 
 import (
-	"log"
 	"time"
 	"fmt"
 	"io"
@@ -13,7 +12,6 @@ func Logger(writer io.Writer) Handler {
 		writer = os.Stdout
 	}
 	return func(ctx *Context) error {
-		log.Printf("start logger!")
 		start := time.Now()
 		format := `{"time":"%v","method":"%s","uri":"%s","status":"%v","referer":"%s","host":"%s","user_agent":"%s","remote_addr":"%s","latency":"%s","request_length":"%v","response_length":"%v"}` + "\n"
 		defer func() {

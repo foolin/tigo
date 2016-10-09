@@ -17,7 +17,7 @@ func Panic(writer io.Writer) Handler {
 					return
 				}
 				writer.Write([]byte(fmt.Sprintf(
-					"----------- tigo panic info start --------------\nError:%v\nTime:%v\nUri:%s\nRemote-Addr:%s\n%s\n%s----------- tigo panic info end --------------\n",
+					"----------- Tigo panic info start --------------\nError:%v\nTime:%v\nUri:%s\nRemote-Addr:%s\n%s\n%s----------- Tigo panic info end --------------\n",
 					err,
 					time.Now().Format(time.RFC3339),
 					ctx.Request.URI(),
