@@ -17,6 +17,7 @@ func New() *Router {
 		return &Context{
 			pvalues: make([]string, r.maxParams),
 			router:  r,
+			render: r.render,
 		}
 	}
 	return r
@@ -28,12 +29,20 @@ func Default() *Router {
 	r.Use(Panic(os.Stderr))
 	//logger
 	r.Use(Logger(os.Stdout))
+	//tempate
+	r.render = NewHtmlRender()
 	return r
 }
 
 func (r *Router) Run(addr string) error {
 	if addr == ""{
 		addr = ":8080"
+	}
+	if r.render != nil{
+		err := r.render.Init()
+		if err != nil {
+			return err
+		}
 	}
 	return fasthttp.ListenAndServe(addr, r.HandleRequest)
 }

@@ -6,10 +6,10 @@ package tigo
 
 import (
 	"fmt"
-
 	"github.com/valyala/fasthttp"
 	"encoding/json"
 	"strings"
+	"errors"
 )
 
 // SerializeFunc serializes the given data of arbitrary type into a byte array.
@@ -27,6 +27,8 @@ type Context struct {
 	data     map[string]interface{} // data items managed by Get and Set
 	index    int                    // the index of the currently executing handler in handlers
 	handlers []Handler              // the handlers associated with the current route
+
+	render Render
 }
 
 // Router returns the Router that is handling the incoming HTTP request.
@@ -105,6 +107,8 @@ func (c *Context) WriteData(data interface{}) (err error) {
 
 // WriteJson writes json values to the response.
 func (c *Context) WriteJson(data interface{}) (err error) {
+	//Content-Type:application/json; charset=utf-8
+	c.Response.Header.Set("Content-Type", "application/json; charset=utf-8")
 	var bytes []byte
 	if bytes, err = json.Marshal(data); err == nil{
 		_, err = c.Write(bytes)
@@ -120,7 +124,30 @@ func (c *Context) IsAjax() bool {
 
 // Bind post json
 func (c *Context) BindJson(out interface{}) error  {
-	return json.Unmarshal(c.Request.Body(), &out)
+	bytes := c.Request.Body()
+	if len(bytes) <= 0{
+		return nil
+	}
+	return json.Unmarshal(bytes, &out)
+}
+
+// Render with layout
+func (c *Context) Render(name string, data interface{}) error{
+	if c.render == nil{
+		return errors.New("Render engine not found.")
+	}
+	c.Response.Header.Set("Content-Type", "text/html; charset=utf-8")
+	return c.render.Render(c.Response.BodyWriter(), name, data)
+}
+
+// Render only single file
+func (c *Context) RenderFile(name string, data interface{}) error {
+	if c.render == nil{
+		return errors.New("Render engine not found.")
+	}
+	//Content-Type:text/html; charset=utf-8
+	c.Response.Header.Set("Content-Type", "text/html; charset=utf-8")
+	return c.render.RenderFile(c.Response.BodyWriter(), name, data)
 }
 
 // init sets the request and response of the context and resets all other properties.
