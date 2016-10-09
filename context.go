@@ -8,6 +8,8 @@ import (
 	"fmt"
 
 	"github.com/valyala/fasthttp"
+	"encoding/json"
+	"strings"
 )
 
 // SerializeFunc serializes the given data of arbitrary type into a byte array.
@@ -101,6 +103,26 @@ func (c *Context) WriteData(data interface{}) (err error) {
 	return
 }
 
+// WriteJson writes json values to the response.
+func (c *Context) WriteJson(data interface{}) (err error) {
+	var bytes []byte
+	if bytes, err = json.Marshal(data); err == nil{
+		_, err = c.Write(bytes)
+	}
+	return
+}
+
+// Is ajax request
+func (c *Context) IsAjax() bool {
+	xreq := string(c.Request.Header.Peek("X-Requested-With"))	//XMLHttpRequest
+	return xreq != "" && strings.ToLower(xreq) == "xmlhttprequest"
+}
+
+// Bind post json
+func (c *Context) BindJson(out interface{}) error  {
+	return json.Unmarshal(c.Request.Body(), &out)
+}
+
 // init sets the request and response of the context and resets all other properties.
 func (c *Context) init(ctx *fasthttp.RequestCtx) {
 	c.RequestCtx = ctx
@@ -124,3 +146,4 @@ func Serialize(data interface{}) (bytes []byte, err error) {
 	}
 	return nil, nil
 }
+
