@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"html/template"
 	"bytes"
+	"log"
 )
 //Map for data with map[string]interface{}
 type M map[string]interface{}
@@ -121,6 +122,7 @@ func (s *HtmlRender) Render(out io.Writer, name string, data interface{}) error 
 	if s.master == "" {
 		return fmt.Errorf("master page not exist in views root: %v.", s.viewRoot)
 	}
+	log.Printf("render: %#v", s)
 	renderPartialNames := make(map[string]int, 0)
 	return s.executeTemplate(out, s.master, data, template.FuncMap{
 		"content": func() (template.HTML, error) {

@@ -13,6 +13,7 @@ type RouteGroup struct {
 	prefix   string
 	router   *Router
 	handlers []Handler
+	render   Render
 }
 
 // newRouteGroup creates a new RouteGroup with the given path prefix, router, and handlers.
@@ -97,11 +98,16 @@ func (r *RouteGroup) Group(prefix string, handlers ...Handler) *RouteGroup {
 		handlers = make([]Handler, len(r.handlers))
 		copy(handlers, r.handlers)
 	}
-	return newRouteGroup(r.prefix+prefix, r.router, handlers)
+	return newRouteGroup(r.prefix + prefix, r.router, handlers)
 }
 
 // Use registers one or multiple handlers to the current route group.
 // These handlers will be shared by all routes belong to this group and its subgroups.
 func (r *RouteGroup) Use(handlers ...Handler) {
 	r.handlers = append(r.handlers, handlers...)
+}
+
+// SetRender set render engine for Render()
+func (r *RouteGroup) SetRender(render Render) {
+	r.render = render
 }

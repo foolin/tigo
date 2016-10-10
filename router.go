@@ -26,7 +26,6 @@ type (
 		maxParams        int
 		notFound         []Handler
 		notFoundHandlers []Handler
-		render           Render
 	}
 
 	// routeStore stores route paths and the corresponding handlers.
@@ -121,10 +120,6 @@ func (r *Router) findAllowedMethods(path string) map[string]bool {
 		}
 	}
 	return methods
-}
-
-func (r *Router) SetRender(render Render) {
-	r.render = render
 }
 
 // NotFoundHandler returns a 404 HTTP error indicating a request has no matching route.

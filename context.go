@@ -27,8 +27,6 @@ type Context struct {
 	data     map[string]interface{} // data items managed by Get and Set
 	index    int                    // the index of the currently executing handler in handlers
 	handlers []Handler              // the handlers associated with the current route
-
-	render Render
 }
 
 // Router returns the Router that is handling the incoming HTTP request.
@@ -133,21 +131,21 @@ func (c *Context) BindJson(out interface{}) error  {
 
 // Render with layout
 func (c *Context) Render(name string, data interface{}) error{
-	if c.render == nil{
+	if c.router.render == nil{
 		return errors.New("Render engine not found.")
 	}
 	c.Response.Header.Set("Content-Type", "text/html; charset=utf-8")
-	return c.render.Render(c.Response.BodyWriter(), name, data)
+	return c.router.render.Render(c.Response.BodyWriter(), name, data)
 }
 
 // Render only single file
 func (c *Context) RenderFile(name string, data interface{}) error {
-	if c.render == nil{
+	if c.router.render == nil{
 		return errors.New("Render engine not found.")
 	}
 	//Content-Type:text/html; charset=utf-8
 	c.Response.Header.Set("Content-Type", "text/html; charset=utf-8")
-	return c.render.RenderFile(c.Response.BodyWriter(), name, data)
+	return c.router.render.RenderFile(c.Response.BodyWriter(), name, data)
 }
 
 // init sets the request and response of the context and resets all other properties.

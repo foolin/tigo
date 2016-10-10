@@ -17,7 +17,6 @@ func New() *Router {
 		return &Context{
 			pvalues: make([]string, r.maxParams),
 			router:  r,
-			render: r.render,
 		}
 	}
 	return r
