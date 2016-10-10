@@ -30,15 +30,19 @@ func Default() *Router {
 	//logger
 	r.Use(Logger(os.Stdout))
 	//tempate
-	r.render = NewHtmlRender()
+	r.render = NewHtmlRender(HtmlRenderConfig{
+		ViewRoot: "views",
+		MasterPage: "master",
+		Extension: ".html",
+	})
 	return r
 }
 
 func (r *Router) Run(addr string) error {
-	if addr == ""{
+	if addr == "" {
 		addr = ":8080"
 	}
-	if r.render != nil{
+	if r.render != nil {
 		err := r.render.Init()
 		if err != nil {
 			return err
