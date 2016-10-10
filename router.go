@@ -26,6 +26,7 @@ type (
 		maxParams        int
 		notFound         []Handler
 		notFoundHandlers []Handler
+		render   Render
 	}
 
 	// routeStore stores route paths and the corresponding handlers.
@@ -79,6 +80,12 @@ func (r *Router) NotFound(handlers ...Handler) {
 	r.notFound = handlers
 	r.notFoundHandlers = combineHandlers(r.handlers, r.notFound)
 }
+
+// SetRender set render engine for Render()
+func (r *Router) SetRender(render Render) {
+	r.render = render
+}
+
 
 // handleError is the error handler for handling any unhandled errors.
 func (r *Router) handleError(c *Context, err error) {

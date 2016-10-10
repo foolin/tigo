@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 	"html/template"
 	"bytes"
-	"log"
 )
 //Map for data with map[string]interface{}
 type M map[string]interface{}
@@ -19,30 +18,31 @@ type Render interface {
 	Init() error
 	//Render layout and name
 	Render(out io.Writer, name string, data interface{}) error
-	//Render only file without layout
-	RenderFile(out io.Writer, name string, data interface{}) error
 }
 
 // HtmlRender implements Render interface, but based on golang templates.
 type HtmlRender struct {
 	viewRoot string
-	master   string
 	ext      string
 	template *template.Template
+	funcs    template.FuncMap
 }
 
 type HtmlRenderConfig struct {
-	ViewRoot   string
-	MasterPage string
-	Extension  string
+	ViewRoot  string
+	Extension string
+	Funcs     template.FuncMap
 }
 
-var defaultFuncs = template.FuncMap{
-	"content": func() (string, error) {
-		return ">>>Error:content tag not support!!!<<<", nil
+var emptyFuncs = template.FuncMap{
+	"content": func() (template.HTML, error) {
+		return ">>>Error:{content} tag only support at layout page!!!<<<", nil
+	},
+	"layout": func(layoutName string) (template.HTML, error) {
+		return template.HTML(fmt.Sprintf(">>>Error:{layout %v} tag not support !!!<<<", layoutName)), nil
 	},
 	"render": func(partialName string) (template.HTML, error) {
-		return template.HTML(fmt.Sprintf(">>>Error:render %v tag not support !!!", partialName)), nil
+		return template.HTML(fmt.Sprintf(">>>Error:{render %v} tag not support !!!<<<", partialName)), nil
 	},
 }
 
@@ -54,7 +54,6 @@ const (
 func NewHtmlRender(config HtmlRenderConfig) Render {
 	return &HtmlRender{
 		viewRoot: config.ViewRoot,
-		master: config.MasterPage,
 		ext: config.Extension,
 		template:    template.New(filepath.Base(config.ViewRoot)),
 	}
@@ -102,7 +101,7 @@ func (s *HtmlRender) Init() error {
 		name = strings.TrimSuffix(name, extension) // remove extension
 
 		t := s.template.New(name)
-		_, err = t.Funcs(defaultFuncs).Parse(string(data))
+		_, err = t.Funcs(emptyFuncs).Parse(string(data))
 		if err != nil {
 			return err
 		}
@@ -117,66 +116,62 @@ func (s *HtmlRender) Init() error {
 }
 
 // Render executes template named name, passing data as context, the output is written to out.
-// This method render use layout with master page.
 func (s *HtmlRender) Render(out io.Writer, name string, data interface{}) error {
-	if s.master == "" {
-		return fmt.Errorf("master page not exist in views root: %v.", s.viewRoot)
-	}
-	log.Printf("render: %#v", s)
-	renderPartialNames := make(map[string]int, 0)
-	return s.executeTemplate(out, s.master, data, template.FuncMap{
-		"content": func() (template.HTML, error) {
-			buff, err := s.executeTemplateBuf(name, data)
-			if err != nil {
-				return "", err
-			}
-			return template.HTML(buff.String()), nil
+	var masterName string
+	var renderTimes map[string]int
+	var funcs = template.FuncMap{
+		"content": emptyFuncs["content"],
+		"layout": func(layoutName string) (template.HTML, error) {
+			masterName = layoutName
+			return "", nil
 		},
 		"render": func(partialName string) (template.HTML, error) {
-			renderPartialNames[partialName] = renderPartialNames[partialName] + 1
-			if renderPartialNames[partialName] > maxRenderFileNum {
+			renderTimes[partialName] = renderTimes[partialName] + 1
+			if renderTimes[partialName] > maxRenderFileNum {
 				return "", fmt.Errorf("render cycle error, render \"%v\" max allow %v times.", partialName, maxRenderFileNum)
 			}
 			if s.template.Lookup(partialName) != nil {
-				buf, err := s.executeTemplateBuf(partialName, data)
+				buf, err := s.executeTemplateBuf(partialName, data, nil)
 				return template.HTML(buf.String()), err
 			}
 			return "", nil
 		},
-	})
-}
-
-// Render executes template named name, passing data as context, the output is written to out.
-// This method render with no layout.
-func (s *HtmlRender) RenderFile(out io.Writer, name string, data interface{}) error {
-	renderPartialNames := make(map[string]int, 0)
-	return s.executeTemplate(out, name, data, template.FuncMap{
-		"content": defaultFuncs["content"],
-		"render": func(partialName string) (template.HTML, error) {
-			renderPartialNames[partialName] = renderPartialNames[partialName] + 1
-			if renderPartialNames[partialName] > maxRenderFileNum {
-				return "", fmt.Errorf("render cycle error, render \"%v\" max allow %v times.", partialName, maxRenderFileNum)
-			}
-			if s.template.Lookup(partialName) != nil {
-				buf, err := s.executeTemplateBuf(partialName, data)
-				return template.HTML(buf.String()), err
-			}
-			return "", nil
-		},
-	})
-}
-
-func (s *HtmlRender) executeTemplate(out io.Writer, name string, data interface{}, funcs template.FuncMap) error {
-	if tpl := s.template.Lookup(name); tpl != nil {
-		return tpl.Funcs(funcs).Execute(out, data)
 	}
-	return fmt.Errorf("template:%v not found!", name)
+
+	//执行页面
+	renderTimes = make(map[string]int, 0)
+	buf, err := s.executeTemplateBuf(name, data, funcs)
+	if err != nil {
+		return err
+	}
+	if masterName == ""{
+		//直接输出
+		_, err = out.Write(buf.Bytes())
+		return err
+	}
+
+	//执行母版页
+	funcs["content"] = func() (template.HTML, error) {
+		return template.HTML(buf.Bytes()), nil
+	}
+	//如果含有layout，则执行
+	renderTimes = make(map[string]int, 0)
+	return s.executeTemplateRaw(out, masterName, data, funcs)
 }
 
-func (s *HtmlRender) executeTemplateBuf(name string, data interface{}) (*bytes.Buffer, error) {
+func (s *HtmlRender) executeTemplateRaw(out io.Writer, name string, data interface{}, funcs template.FuncMap) error {
+	allFuncs := template.FuncMap{}
+	for k, v := range funcs{
+		allFuncs[k] = v
+	}
+	for k, v := range s.funcs{
+		allFuncs[k] = v
+	}
+	return s.template.Funcs(allFuncs).ExecuteTemplate(out, name, data)
+}
+
+func (s *HtmlRender) executeTemplateBuf(name string, data interface{}, funcs template.FuncMap) (*bytes.Buffer, error) {
 	buf := new(bytes.Buffer)
-	err := s.template.Funcs(template.FuncMap{
-		"content": defaultFuncs["content"],
-	}).ExecuteTemplate(buf, name, data)
+	err := s.executeTemplateRaw(buf, name, data, funcs)
 	return buf, err
 }

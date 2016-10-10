@@ -138,16 +138,6 @@ func (c *Context) Render(name string, data interface{}) error{
 	return c.router.render.Render(c.Response.BodyWriter(), name, data)
 }
 
-// Render only single file
-func (c *Context) RenderFile(name string, data interface{}) error {
-	if c.router.render == nil{
-		return errors.New("Render engine not found.")
-	}
-	//Content-Type:text/html; charset=utf-8
-	c.Response.Header.Set("Content-Type", "text/html; charset=utf-8")
-	return c.router.render.RenderFile(c.Response.BodyWriter(), name, data)
-}
-
 // init sets the request and response of the context and resets all other properties.
 func (c *Context) init(ctx *fasthttp.RequestCtx) {
 	c.RequestCtx = ctx

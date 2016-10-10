@@ -31,7 +31,6 @@ func Default() *Router {
 	//tempate
 	r.render = NewHtmlRender(HtmlRenderConfig{
 		ViewRoot: "views",
-		MasterPage: "master",
 		Extension: ".html",
 	})
 	return r
