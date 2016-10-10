@@ -66,14 +66,14 @@ func NewHtmlRender(config HtmlRenderConfig) Render {
 func (r *HtmlRender) Init() error {
 	info, err := os.Stat(r.viewRoot)
 	if err != nil {
-		return err
+		return fmt.Errorf("tigo: view root:%s not found.", r.viewRoot)
 	}
 	if !info.IsDir() {
 		return fmt.Errorf("tigo: view root:%s is not a directory", r.viewRoot)
 	}
 	werr := filepath.Walk(r.viewRoot, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return err
+			return fmt.Errorf("tigo: view root:%s, error: %v", r.viewRoot, err)
 		}
 		if info.IsDir() {
 			return nil
@@ -86,7 +86,7 @@ func (r *HtmlRender) Init() error {
 
 		data, err := ioutil.ReadFile(path)
 		if err != nil {
-			return err
+			return fmt.Errorf("tigo: view root:%s, error: %v", r.viewRoot, err)
 		}
 
 		// We remove the directory name from the path
@@ -106,13 +106,13 @@ func (r *HtmlRender) Init() error {
 		t := r.template.New(name)
 		_, err = t.Funcs(emptyFuncs).Parse(string(data))
 		if err != nil {
-			return err
+			return fmt.Errorf("tigo: view root:%s, error: %v", r.viewRoot, err)
 		}
 		return nil
 	})
 
 	if werr != nil {
-		return werr
+		return fmt.Errorf("tigo: view root:%s, error: %v", r.viewRoot, werr)
 	}
 
 	return nil
