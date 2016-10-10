@@ -21,6 +21,9 @@ type Render interface {
 }
 
 // HtmlRender implements Render interface, but based on golang templates.
+// {{layout "layout/master"}} use master page.
+// {{render "layout/header"}} render sub page
+// {{content}} only use layout page, this tag for render content.
 type HtmlRender struct {
 	viewRoot string
 	ext      string
@@ -60,15 +63,15 @@ func NewHtmlRender(config HtmlRenderConfig) Render {
 }
 
 // Init for initialize, when running, this method is executed.
-func (s *HtmlRender) Init() error {
-	info, err := os.Stat(s.viewRoot)
+func (r *HtmlRender) Init() error {
+	info, err := os.Stat(r.viewRoot)
 	if err != nil {
 		return err
 	}
 	if !info.IsDir() {
-		return fmt.Errorf("tigo: view root:%s is not a directory", s.viewRoot)
+		return fmt.Errorf("tigo: view root:%s is not a directory", r.viewRoot)
 	}
-	werr := filepath.Walk(s.viewRoot, func(path string, info os.FileInfo, err error) error {
+	werr := filepath.Walk(r.viewRoot, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -77,7 +80,7 @@ func (s *HtmlRender) Init() error {
 		}
 
 		extension := filepath.Ext(path)
-		if s.ext != extension {
+		if r.ext != extension {
 			return nil
 		}
 
@@ -92,7 +95,7 @@ func (s *HtmlRender) Init() error {
 		// we trim the foo part and remain with /bar.tpl
 		//
 		// NOTE we don't account for the opening slash, when dir ends with /.
-		name := path[len(s.viewRoot):]
+		name := path[len(r.viewRoot):]
 
 		name = filepath.ToSlash(name)
 
@@ -100,7 +103,7 @@ func (s *HtmlRender) Init() error {
 
 		name = strings.TrimSuffix(name, extension) // remove extension
 
-		t := s.template.New(name)
+		t := r.template.New(name)
 		_, err = t.Funcs(emptyFuncs).Parse(string(data))
 		if err != nil {
 			return err
@@ -116,7 +119,7 @@ func (s *HtmlRender) Init() error {
 }
 
 // Render executes template named name, passing data as context, the output is written to out.
-func (s *HtmlRender) Render(out io.Writer, name string, data interface{}) error {
+func (r *HtmlRender) Render(out io.Writer, name string, data interface{}) error {
 	var masterName string
 	var renderTimes map[string]int
 	var funcs = template.FuncMap{
@@ -130,8 +133,8 @@ func (s *HtmlRender) Render(out io.Writer, name string, data interface{}) error 
 			if renderTimes[partialName] > maxRenderFileNum {
 				return "", fmt.Errorf("render cycle error, render \"%v\" max allow %v times.", partialName, maxRenderFileNum)
 			}
-			if s.template.Lookup(partialName) != nil {
-				buf, err := s.executeTemplateBuf(partialName, data, nil)
+			if r.template.Lookup(partialName) != nil {
+				buf, err := r.executeTemplateBuf(partialName, data, nil)
 				return template.HTML(buf.String()), err
 			}
 			return "", nil
@@ -140,7 +143,7 @@ func (s *HtmlRender) Render(out io.Writer, name string, data interface{}) error 
 
 	//执行页面
 	renderTimes = make(map[string]int, 0)
-	buf, err := s.executeTemplateBuf(name, data, funcs)
+	buf, err := r.executeTemplateBuf(name, data, funcs)
 	if err != nil {
 		return err
 	}
@@ -156,22 +159,22 @@ func (s *HtmlRender) Render(out io.Writer, name string, data interface{}) error 
 	}
 	//如果含有layout，则执行
 	renderTimes = make(map[string]int, 0)
-	return s.executeTemplateRaw(out, masterName, data, funcs)
+	return r.executeTemplateRaw(out, masterName, data, funcs)
 }
 
-func (s *HtmlRender) executeTemplateRaw(out io.Writer, name string, data interface{}, funcs template.FuncMap) error {
+func (r *HtmlRender) executeTemplateRaw(out io.Writer, name string, data interface{}, funcs template.FuncMap) error {
 	allFuncs := template.FuncMap{}
 	for k, v := range funcs{
 		allFuncs[k] = v
 	}
-	for k, v := range s.funcs{
+	for k, v := range r.funcs{
 		allFuncs[k] = v
 	}
-	return s.template.Funcs(allFuncs).ExecuteTemplate(out, name, data)
+	return r.template.Funcs(allFuncs).ExecuteTemplate(out, name, data)
 }
 
-func (s *HtmlRender) executeTemplateBuf(name string, data interface{}, funcs template.FuncMap) (*bytes.Buffer, error) {
+func (r *HtmlRender) executeTemplateBuf(name string, data interface{}, funcs template.FuncMap) (*bytes.Buffer, error) {
 	buf := new(bytes.Buffer)
-	err := s.executeTemplateRaw(buf, name, data, funcs)
+	err := r.executeTemplateRaw(buf, name, data, funcs)
 	return buf, err
 }
