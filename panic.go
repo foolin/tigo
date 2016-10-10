@@ -5,6 +5,7 @@ import (
 	"io"
 	"fmt"
 	"time"
+	"net/http"
 )
 
 func Panic(writer io.Writer) Handler {
@@ -13,6 +14,7 @@ func Panic(writer io.Writer) Handler {
 			if err := recover(); err != nil{
 				//abort next
 				ctx.Abort()
+				ctx.SetStatusCode(http.StatusInternalServerError)
 				if writer == nil{
 					return
 				}

@@ -22,12 +22,13 @@ func New() *Router {
 	return r
 }
 
+//Default create default router, use panic, logger and render.
 func Default() *Router {
 	r := New()
-	//panic
-	r.Use(Panic(os.Stderr))
 	//logger
 	r.Use(Logger(os.Stdout))
+	//panic
+	r.Use(Panic(os.Stderr))
 	//tempate
 	r.render = NewHtmlRender(HtmlRenderConfig{
 		ViewRoot: "views",
