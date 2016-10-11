@@ -15,7 +15,7 @@ func Logger(writer io.Writer) Handler {
 	}
 	return func(ctx *Context) error {
 		start := time.Now()
-		format := `{"time":"%v","method":"%s","uri":"%s","status":"%v","referer":"%s","host":"%s","user_agent":"%s","remote_addr":"%s","latency":"%s","request_length":"%v","response_length":"%v", "error":%v}` + "\n"
+		format := `{"time":"%v","method":"%s","uri":"%s","status":"%v","referer":"%s","host":"%s","user_agent":%v,"remote_addr":"%s","latency":"%s","request_length":"%v","response_length":"%v", "error":%v}` + "\n"
 		err := ctx.Next()
 		statusCode := ctx.Response.StatusCode()
 		errmsg := ""
@@ -35,7 +35,7 @@ func Logger(writer io.Writer) Handler {
 			statusCode,
 			ctx.Request.Header.Referer(),
 			ctx.Request.Host(),
-			ctx.Request.Header.UserAgent(),
+			strconv.Quote(fmt.Sprintf("%s", ctx.Request.Header.UserAgent())),
 			ctx.RemoteAddr(),
 			latency,
 			ctx.Request.Header.ContentLength(),
