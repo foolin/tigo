@@ -15,10 +15,11 @@ func New() *Router {
 	r.NotFound(MethodNotAllowedHandler, NotFoundHandler)
 	r.OnError(HttpErrorHandler)
 	r.pool.New = func() interface{} {
-		return &Context{
+		ctx := &Context{
 			pvalues: make([]string, r.maxParams),
 			router:  r,
 		}
+		return ctx
 	}
 	return r
 }

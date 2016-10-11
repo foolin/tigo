@@ -54,6 +54,7 @@ var Methods = []string{
 func (r *Router) HandleRequest(ctx *fasthttp.RequestCtx) {
 	c := r.pool.Get().(*Context)
 	c.init(ctx)
+	c.SetHeader("Server", "tigo")
 	c.handlers, c.pnames = r.find(string(ctx.Method()), string(ctx.Path()), c.pvalues)
 	if err := c.Next(); err != nil {
 		r.errorHandler(c, err)

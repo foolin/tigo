@@ -5,21 +5,15 @@
 package tigo
 
 import (
-	"fmt"
 	"github.com/valyala/fasthttp"
 	"encoding/json"
-	"strings"
 	"errors"
+	"strings"
+	"net"
 )
-
-// SerializeFunc serializes the given data of arbitrary type into a byte array.
-type SerializeFunc func(data interface{}) ([]byte, error)
-
 // Context represents the contextual data and environment while processing an incoming HTTP request.
 type Context struct {
 	*fasthttp.RequestCtx
-
-	Serialize SerializeFunc // the function serializing the given data of arbitrary type into a byte array.
 
 	router   *Router
 	pnames   []string               // list of route parameter names
@@ -92,35 +86,199 @@ func (c *Context) URL(route string, pairs ...interface{}) string {
 	return ""
 }
 
-// WriteData writes the given data of arbitrary type to the response.
+
+// RequestHeader returns the request header's value
+// accepts one parameter, the key of the header (string)
+// returns string
+func (c *Context) RequestHeader(key string) string {
+	val := c.Request.Header.Peek(key)
+	return string(val)
+}
+
+// RequestIP gets just the Remote Address from the client.
+func (ctx *Context) RequestIP() string {
+	if ip, _, err := net.SplitHostPort(strings.TrimSpace(ctx.RequestCtx.RemoteAddr().String())); err == nil {
+		return ip
+	}
+	return ""
+}
+
+// RemoteAddr is like RequestIP but it checks for proxy servers also, tries to get the real client's request IP
+func (ctx *Context) RemoteAddr() string {
+	header := string(ctx.RequestCtx.Request.Header.Peek("X-Real-Ip"))
+	realIP := strings.TrimSpace(header)
+	if realIP != "" {
+		return realIP
+	}
+	realIP = string(ctx.RequestCtx.Request.Header.Peek("X-Forwarded-For"))
+	idx := strings.IndexByte(realIP, ',')
+	if idx >= 0 {
+		realIP = realIP[0:idx]
+	}
+	realIP = strings.TrimSpace(realIP)
+	if realIP != "" {
+		return realIP
+	}
+	return ctx.RequestIP()
+}
+
+// QueryString returns the query value of a single key/name
+func (c *Context) QueryString(key string) string {
+	val := c.QueryArgs().Peek(key)
+	return string(val)
+}
+
+// QueryMutiString returns query value associated with the given key.
+func (c *Context) QueryMutiString(key string) []string {
+	arrBytes := c.QueryArgs().PeekMulti(key)
+	return arrBytes2Strs(arrBytes)
+}
+
+// PostMutiString returns the post data values as []string of a single key/name
+func (ctx *Context) PostMutiString(name string) []string {
+	arrBytes := ctx.PostArgs().PeekMulti(name)
+	return arrBytes2Strs(arrBytes)
+}
+
+// PostString returns the post data value of a single key/name
+// returns an empty string if nothing found
+func (ctx *Context) PostString(name string) string {
+	if v := ctx.PostMutiString(name); len(v) > 0 {
+		return v[0]
+	}
+	return ""
+}
+
+// FormMutiValue returns form value associated with the given key.
+//
+// The value is searched in the following places:
+//
+//   * Query string.
+//   * POST or PUT body.
+//
+// There are more fine-grained methods for obtaining form values:
+//
+//   * QueryArgs for obtaining values from query string.
+//   * PostArgs for obtaining values from POST or PUT body.
+//   * MultipartForm for obtaining values from multipart form.
+//   * FormFile for obtaining uploaded files.
+//
+// The returned value is valid until returning from RequestHandler.
+func (ctx *Context) FormMutiValue(key string) [][]byte {
+	arr := make([][]byte, 0)
+	mv := ctx.QueryArgs().PeekMulti(key)
+	if len(mv) > 0{
+		arr = append(arr, mv...)
+	}
+	mv = ctx.PostArgs().PeekMulti(key)
+	if len(mv) > 0{
+		arr = append(arr, mv...)
+	}
+	mf, err := ctx.MultipartForm()
+	if err == nil && mf.Value != nil {
+		mstrs := mf.Value[key]
+		if len(mstrs) > 0 {
+			for _, v := range mstrs{
+				arr = append(arr, []byte(v))
+			}
+		}
+	}
+	return arr
+}
+
+// FormString returns a single value, as string, from post request's data
+func (ctx *Context) FormString(name string) string {
+	return string(ctx.FormValue(name))
+}
+
+// FormMutiString returns form value associated with the given key.
+//
+// The value is searched in the following places:
+//
+//   * Query string.
+//   * POST or PUT body.
+//
+// There are more fine-grained methods for obtaining form values:
+//
+//   * QueryArgs for obtaining values from query string.
+//   * PostArgs for obtaining values from POST or PUT body.
+//   * MultipartForm for obtaining values from multipart form.
+//   * FormFile for obtaining uploaded files.
+//
+// The returned value is valid until returning from RequestHandler.
+func (ctx *Context) FormMutiString(key string) []string {
+	arrBytes := ctx.FormMutiValue(key)
+	return arrBytes2Strs(arrBytes)
+}
+
+// SetHeader set resposne header, use Add for setting multiple header values under the same key.
+func (c *Context) SetHeader(key, value string)  {
+	c.Response.Header.Set(key, value)
+}
+
+// writeWithStatusCode writes the given data of arbitrary type to the response.
 // The method calls the Serialize() method to convert the data into a byte array and then writes
 // the byte array to the response.
-func (c *Context) WriteData(data interface{}) (err error) {
-	var bytes []byte
-	if bytes, err = c.Serialize(data); err == nil {
-		_, err = c.Write(bytes)
+func (c *Context) writeWithContentType(contentType string,  bytes []byte) error {
+	c.SetContentType(contentType)
+	_, err := c.Write(bytes)
+	if err != nil {
+		return err
 	}
-	return
+	return nil
 }
 
-// WriteJson writes json values to the response.
-func (c *Context) WriteJson(data interface{}) (err error) {
-	//Content-Type:application/json; charset=utf-8
-	c.Response.Header.Set("Content-Type", "application/json; charset=utf-8")
+// JSON writes json values to the response.
+func (c *Context) JSON(data interface{}) (err error) {
 	var bytes []byte
 	if bytes, err = json.Marshal(data); err == nil{
-		_, err = c.Write(bytes)
+		err = c.writeWithContentType("application/json; charset=utf-8", bytes)
 	}
 	return
 }
 
-// Is ajax request
-func (c *Context) IsAjax() bool {
-	xreq := string(c.Request.Header.Peek("X-Requested-With"))	//XMLHttpRequest
-	return xreq != "" && strings.ToLower(xreq) == "xmlhttprequest"
+// Text writes text values to the response.
+func (c *Context) Text(content string) error{
+	return c.writeWithContentType("text/plain; charset=utf-8", []byte(content))
 }
 
-// Bind post json
+// HTML writes HTML values to the response.
+func (c *Context) HTML(content string) error{
+	return c.writeWithContentType("text/html; charset=utf-8", []byte(content))
+}
+
+func (ctx *Context) clientAllowsGzip() bool {
+	if h := ctx.RequestHeader("Accept-Encoding"); h != "" {
+		for _, v := range strings.Split(h, ";") {
+			if strings.Contains(v, "gzip") { // we do Contains because sometimes browsers has the q=, we don't use it atm. || strings.Contains(v,"deflate"){
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// Gzip accepts bytes, which are compressed to gzip format and sent to the client
+func (ctx *Context) Gzip(b []byte, status int) (err error){
+	ctx.RequestCtx.Response.Header.Add("Vary", "Accept-Encoding")
+	if ctx.clientAllowsGzip() {
+		_, err = fasthttp.WriteGzip(ctx.RequestCtx.Response.BodyWriter(), b)
+		if err == nil {
+			ctx.SetHeader("Content-Encoding", "gzip")
+		}
+	}
+	return
+}
+
+// IsAjax returns true if this request is an 'ajax request'( XMLHttpRequest)
+//
+// Read more at: http://www.w3schools.com/ajax/
+func (ctx *Context) IsAjax() bool {
+	return ctx.RequestHeader("HTTP_X_REQUESTED_WITH") == "XMLHttpRequest"
+}
+
+// BindJson post for json
 func (c *Context) BindJson(out interface{}) error  {
 	bytes := c.Request.Body()
 	if len(bytes) <= 0{
@@ -129,12 +287,12 @@ func (c *Context) BindJson(out interface{}) error  {
 	return json.Unmarshal(bytes, &out)
 }
 
-// Render with layout
+// Render render layout
 func (c *Context) Render(name string, data interface{}) error{
 	if c.router.render == nil{
 		return errors.New("Render engine not found.")
 	}
-	c.Response.Header.Set("Content-Type", "text/html; charset=utf-8")
+	c.SetContentType("text/html; charset=utf-8")
 	return c.router.render.Render(c.Response.BodyWriter(), name, data)
 }
 
@@ -143,22 +301,12 @@ func (c *Context) init(ctx *fasthttp.RequestCtx) {
 	c.RequestCtx = ctx
 	c.data = nil
 	c.index = -1
-	c.Serialize = Serialize
 }
 
-// Serialize converts the given data into a byte array.
-// If the data is neither a byte array nor a string, it will call fmt.Sprint to convert it into a string.
-func Serialize(data interface{}) (bytes []byte, err error) {
-	switch data.(type) {
-	case []byte:
-		return data.([]byte), nil
-	case string:
-		return []byte(data.(string)), nil
-	default:
-		if data != nil {
-			return []byte(fmt.Sprint(data)), nil
-		}
+func arrBytes2Strs(arrBytes [][]byte) []string  {
+	arrStr := make([]string, len(arrBytes))
+	for i, v := range arrBytes {
+		arrStr[i] = string(v)
 	}
-	return nil, nil
+	return arrStr
 }
-
