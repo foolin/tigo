@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"html/template"
 	"bytes"
+	"path"
 )
 //Map for data with map[string]interface{}
 type M map[string]interface{}
@@ -66,10 +67,12 @@ func NewHtmlRender(config HtmlRenderConfig) Render {
 func (r *HtmlRender) Init() error {
 	info, err := os.Stat(r.viewRoot)
 	if err != nil {
-		return fmt.Errorf("tigo: view root:%s not found.", r.viewRoot)
+		//return fmt.Errorf("tigo: view root:%s is not a directory.", r.viewRoot)
+		return nil
 	}
 	if !info.IsDir() {
-		return fmt.Errorf("tigo: view root:%s is not a directory", r.viewRoot)
+		//return fmt.Errorf("tigo: view root:%s is not a directory", r.viewRoot)
+		return nil
 	}
 	werr := filepath.Walk(r.viewRoot, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -118,8 +121,17 @@ func (r *HtmlRender) Init() error {
 	return nil
 }
 
-// Render executes template named name, passing data as context, the output is written to out.
+
 func (r *HtmlRender) Render(out io.Writer, name string, data interface{}) error {
+	err := r.executeRender(out, name, data)
+	if err != nil {
+		return fmt.Errorf("HtmlRender render \"%v\" happen error, %v", path.Join(r.viewRoot, name + r.ext), err)
+	}
+	return nil
+}
+
+// Render executes template named name, passing data as context, the output is written to out.
+func (r *HtmlRender) executeRender(out io.Writer, name string, data interface{}) error {
 	var masterName string
 	var renderTimes map[string]int
 	var funcs = template.FuncMap{

@@ -12,6 +12,9 @@ type (
 	// Handler is the function for handling HTTP requests.
 	Handler func(*Context) error
 
+	// ErrorHandler is function for handling error.
+	ErrorHandler func(*Context, error)
+
 	// Router manages routes and dispatches HTTP requests to the handlers of the matching routes.
 	Router struct {
 		RouteGroup
@@ -21,7 +24,8 @@ type (
 		maxParams        int
 		notFound         []Handler
 		notFoundHandlers []Handler
-		render   Render
+		errorHandler     ErrorHandler
+		render           Render
 	}
 
 	// routeStore stores route paths and the corresponding handlers.
@@ -52,7 +56,7 @@ func (r *Router) HandleRequest(ctx *fasthttp.RequestCtx) {
 	c.init(ctx)
 	c.handlers, c.pnames = r.find(string(ctx.Method()), string(ctx.Path()), c.pvalues)
 	if err := c.Next(); err != nil {
-		r.handleError(c, err)
+		r.errorHandler(c, err)
 	}
 	r.pool.Put(c)
 }
@@ -81,14 +85,9 @@ func (r *Router) SetRender(render Render) {
 	r.render = render
 }
 
-
-// handleError is the error handler for handling any unhandled errors.
-func (r *Router) handleError(c *Context, err error) {
-	if httpError, ok := err.(HTTPError); ok {
-		c.Error(httpError.Error(), httpError.StatusCode())
-	} else {
-		c.Error(err.Error(), http.StatusInternalServerError)
-	}
+// Error handler error.
+func (r *Router) OnError(errHandler ErrorHandler) {
+	r.errorHandler = errHandler
 }
 
 func (r *Router) add(method, path string, handlers []Handler) {
@@ -128,6 +127,17 @@ func (r *Router) findAllowedMethods(path string) map[string]bool {
 func NotFoundHandler(*Context) error {
 	return NewHTTPError(http.StatusNotFound)
 }
+
+
+// HttpErrorHandler is the error handler for handling any unhandled errors.
+func HttpErrorHandler(c *Context, err error) {
+	if httpError, ok := err.(HTTPError); ok {
+		c.Error(httpError.Error(), httpError.StatusCode())
+	} else {
+		c.Error(err.Error(), http.StatusInternalServerError)
+	}
+}
+
 
 // MethodNotAllowedHandler handles the situation when a request has matching route without matching HTTP method.
 // In this case, the handler will respond with an Allow HTTP header listing the allowed HTTP methods.
