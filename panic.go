@@ -5,13 +5,14 @@ import (
 	"io"
 	"fmt"
 	"time"
+	"net/http"
 )
 
 func Panic(writer io.Writer) Handler {
 	return func(ctx *Context) (err error){
 		defer func() {
-			if perr := recover(); perr != nil{
-				err = fmt.Errorf("%s", perr)
+			if rerr := recover(); rerr != nil{
+				err = NewHTTPError(http.StatusInternalServerError, fmt.Sprintf("%s", rerr))
 				if writer == nil{
 					return
 				}

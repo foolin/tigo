@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 	"net/http"
-	"strings"
+	"strconv"
 )
 
 func Logger(writer io.Writer) Handler {
@@ -15,7 +15,7 @@ func Logger(writer io.Writer) Handler {
 	}
 	return func(ctx *Context) error {
 		start := time.Now()
-		format := `{"time":"%v","method":"%s","uri":"%s","status":"%v","referer":"%s","host":"%s","user_agent":"%s","remote_addr":"%s","latency":"%s","request_length":"%v","response_length":"%v", "error":"%v"}` + "\n"
+		format := `{"time":"%v","method":"%s","uri":"%s","status":"%v","referer":"%s","host":"%s","user_agent":"%s","remote_addr":"%s","latency":"%s","request_length":"%v","response_length":"%v", "error":%v}` + "\n"
 		err := ctx.Next()
 		statusCode := ctx.Response.StatusCode()
 		errmsg := ""
@@ -40,7 +40,7 @@ func Logger(writer io.Writer) Handler {
 			latency,
 			ctx.Request.Header.ContentLength(),
 			len(ctx.Response.Body()),
-			strings.Replace(errmsg, "\"", "\\\"", -1),
+			strconv.Quote(errmsg),
 		)))
 
 		return err
