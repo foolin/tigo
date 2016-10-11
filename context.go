@@ -96,21 +96,21 @@ func (c *Context) RequestHeader(key string) string {
 }
 
 // RequestIP gets just the Remote Address from the client.
-func (ctx *Context) RequestIP() string {
-	if ip, _, err := net.SplitHostPort(strings.TrimSpace(ctx.RequestCtx.RemoteAddr().String())); err == nil {
+func (c *Context) RequestIP() string {
+	if ip, _, err := net.SplitHostPort(strings.TrimSpace(c.RequestCtx.RemoteAddr().String())); err == nil {
 		return ip
 	}
 	return ""
 }
 
 // RemoteAddr is like RequestIP but it checks for proxy servers also, tries to get the real client's request IP
-func (ctx *Context) RemoteAddr() string {
-	header := string(ctx.RequestCtx.Request.Header.Peek("X-Real-Ip"))
+func (c *Context) RemoteAddr() string {
+	header := string(c.RequestCtx.Request.Header.Peek("X-Real-Ip"))
 	realIP := strings.TrimSpace(header)
 	if realIP != "" {
 		return realIP
 	}
-	realIP = string(ctx.RequestCtx.Request.Header.Peek("X-Forwarded-For"))
+	realIP = string(c.RequestCtx.Request.Header.Peek("X-Forwarded-For"))
 	idx := strings.IndexByte(realIP, ',')
 	if idx >= 0 {
 		realIP = realIP[0:idx]
@@ -119,7 +119,7 @@ func (ctx *Context) RemoteAddr() string {
 	if realIP != "" {
 		return realIP
 	}
-	return ctx.RequestIP()
+	return c.RequestIP()
 }
 
 // QueryString returns the query value of a single key/name
@@ -135,15 +135,15 @@ func (c *Context) QueryMutiString(key string) []string {
 }
 
 // PostMutiString returns the post data values as []string of a single key/name
-func (ctx *Context) PostMutiString(name string) []string {
-	arrBytes := ctx.PostArgs().PeekMulti(name)
+func (c *Context) PostMutiString(name string) []string {
+	arrBytes := c.PostArgs().PeekMulti(name)
 	return arrBytes2Strs(arrBytes)
 }
 
 // PostString returns the post data value of a single key/name
 // returns an empty string if nothing found
-func (ctx *Context) PostString(name string) string {
-	if v := ctx.PostMutiString(name); len(v) > 0 {
+func (c *Context) PostString(name string) string {
+	if v := c.PostMutiString(name); len(v) > 0 {
 		return v[0]
 	}
 	return ""
@@ -164,17 +164,17 @@ func (ctx *Context) PostString(name string) string {
 //   * FormFile for obtaining uploaded files.
 //
 // The returned value is valid until returning from RequestHandler.
-func (ctx *Context) FormMutiValue(key string) [][]byte {
+func (c *Context) FormMutiValue(key string) [][]byte {
 	arr := make([][]byte, 0)
-	mv := ctx.QueryArgs().PeekMulti(key)
+	mv := c.QueryArgs().PeekMulti(key)
 	if len(mv) > 0{
 		arr = append(arr, mv...)
 	}
-	mv = ctx.PostArgs().PeekMulti(key)
+	mv = c.PostArgs().PeekMulti(key)
 	if len(mv) > 0{
 		arr = append(arr, mv...)
 	}
-	mf, err := ctx.MultipartForm()
+	mf, err := c.MultipartForm()
 	if err == nil && mf.Value != nil {
 		mstrs := mf.Value[key]
 		if len(mstrs) > 0 {
@@ -187,8 +187,8 @@ func (ctx *Context) FormMutiValue(key string) [][]byte {
 }
 
 // FormString returns a single value, as string, from post request's data
-func (ctx *Context) FormString(name string) string {
-	return string(ctx.FormValue(name))
+func (c *Context) FormString(name string) string {
+	return string(c.FormValue(name))
 }
 
 // FormMutiString returns form value associated with the given key.
@@ -206,8 +206,8 @@ func (ctx *Context) FormString(name string) string {
 //   * FormFile for obtaining uploaded files.
 //
 // The returned value is valid until returning from RequestHandler.
-func (ctx *Context) FormMutiString(key string) []string {
-	arrBytes := ctx.FormMutiValue(key)
+func (c *Context) FormMutiString(key string) []string {
+	arrBytes := c.FormMutiValue(key)
 	return arrBytes2Strs(arrBytes)
 }
 
@@ -247,8 +247,8 @@ func (c *Context) HTML(content string) error{
 	return c.writeWithContentType("text/html; charset=utf-8", []byte(content))
 }
 
-func (ctx *Context) clientAllowsGzip() bool {
-	if h := ctx.RequestHeader("Accept-Encoding"); h != "" {
+func (c *Context) clientAllowsGzip() bool {
+	if h := c.RequestHeader("Accept-Encoding"); h != "" {
 		for _, v := range strings.Split(h, ";") {
 			if strings.Contains(v, "gzip") { // we do Contains because sometimes browsers has the q=, we don't use it atm. || strings.Contains(v,"deflate"){
 				return true
@@ -260,12 +260,12 @@ func (ctx *Context) clientAllowsGzip() bool {
 }
 
 // Gzip accepts bytes, which are compressed to gzip format and sent to the client
-func (ctx *Context) Gzip(b []byte, status int) (err error){
-	ctx.RequestCtx.Response.Header.Add("Vary", "Accept-Encoding")
-	if ctx.clientAllowsGzip() {
-		_, err = fasthttp.WriteGzip(ctx.RequestCtx.Response.BodyWriter(), b)
+func (c *Context) Gzip(b []byte, status int) (err error){
+	c.RequestCtx.Response.Header.Add("Vary", "Accept-Encoding")
+	if c.clientAllowsGzip() {
+		_, err = fasthttp.WriteGzip(c.RequestCtx.Response.BodyWriter(), b)
 		if err == nil {
-			ctx.SetHeader("Content-Encoding", "gzip")
+			c.SetHeader("Content-Encoding", "gzip")
 		}
 	}
 	return
@@ -274,8 +274,8 @@ func (ctx *Context) Gzip(b []byte, status int) (err error){
 // IsAjax returns true if this request is an 'ajax request'( XMLHttpRequest)
 //
 // Read more at: http://www.w3schools.com/ajax/
-func (ctx *Context) IsAjax() bool {
-	return ctx.RequestHeader("HTTP_X_REQUESTED_WITH") == "XMLHttpRequest"
+func (c *Context) IsAjax() bool {
+	return c.RequestHeader("HTTP_X_REQUESTED_WITH") == "XMLHttpRequest"
 }
 
 // BindJson post for json
