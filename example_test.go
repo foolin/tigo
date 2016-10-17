@@ -32,7 +32,7 @@ func Example() {
 }
 
 //Example_New example new
-func Example_New() {
+func Example_new() {
 
 	//new router
 	router := tigo.New()
@@ -59,7 +59,7 @@ func Example_New() {
 
 //Example_New render html
 //
-func Example_Render() {
+func Example_render() {
 
 	//new router
 	router := tigo.New()
@@ -111,7 +111,7 @@ func Example_Render() {
 
 //Example_RenderMaster render html user master template.
 //
-func Example_RenderMaster() {
+func Example_renderMaster() {
 
 	//new router
 	router := tigo.Default()
