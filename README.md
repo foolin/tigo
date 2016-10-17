@@ -70,7 +70,7 @@ You should be able to access URLs such as `http://localhost:8080`.
 
 ### Routes
 
-ozzo-routing works by building a routing table in a router and then dispatching HTTP requests to the matching handlers 
+tigo works by building a routing table in a router and then dispatching HTTP requests to the matching handlers 
 found in the routing table. An intuitive illustration of a routing table is as follows:
 
 
@@ -136,7 +136,7 @@ When a URL path matches a route, the matching parameters on the URL path can be 
 ```go
 router := tigo.New()
 
-router.Get("/users/<username>", func (c *routing.Context) error {
+router.Get("/users/<username>", func (c *tigo.Context) error {
 	fmt.Fprintf(c, "Name: %v", c.Param("username"))
 	return nil
 })
@@ -156,7 +156,7 @@ api.Get("/users", h1).Post(h2)
 api.Put("/users/<id>", h3).Delete(h4)
 ```
 
-The above `/api` route group establishes the following routing table:
+The above `/api` route group establishes the following tigo table:
 
 
 Routes                  |  Handlers
@@ -168,7 +168,7 @@ Routes                  |  Handlers
 
 
 As you can see, all these routes have the same route prefix `/api` and the handlers `m1` and `m2`. In other similar
-routing frameworks, the handlers registered with a route group are also called *middlewares*.
+tigo frameworks, the handlers registered with a route group are also called *middlewares*.
 
 Route groups can be nested. That is, a route group can create a child group by calling the `Group()` method. The router
 serves as the top level route group. A child group inherits the handlers registered with its parent group. For example, 
@@ -191,8 +191,8 @@ the `PUT /api/users/<id>` route is associated with the handlers `m1`, `m2`, `m3`
 
 ### Router
 
-Router manages the routing table and dispatches incoming requests to appropriate handlers. A router instance is created
-by calling the `routing.New()` method.
+Router manages the tigo table and dispatches incoming requests to appropriate handlers. A router instance is created
+by calling the `tigo.New()` method.
 
 To hook up router with fasthttp, use the following code:
 
@@ -204,8 +204,8 @@ fasthttp.ListenAndServe(":8080", router.HandleRequest)
 
 ### Handlers
 
-A handler is a function with the signature `func(*routing.Context) error`. A handler is executed by the router if
-the incoming request URL path matches the route that the handler is associated with. Through the `routing.Context` 
+A handler is a function with the signature `func(*tigo.Context) error`. A handler is executed by the router if
+the incoming request URL path matches the route that the handler is associated with. Through the `tigo.Context` 
 parameter, you can access the request information in handlers.
 
 A route may be associated with multiple handlers. These handlers will be executed in the order that they are registered
@@ -221,7 +221,7 @@ and then compress and send the output to response.
 
 ### Context
 
-For each incoming request, a `routing.Context` object is passed through the relevant handlers. Because `routing.Context`
+For each incoming request, a `tigo.Context` object is passed through the relevant handlers. Because `tigo.Context`
 embeds `fasthttp.RequestCtx`, you can access all properties and methods provided by the latter.
  
 Additionally, the `Context.Param()` method allows handlers to access the URL path parameters that match the current route.
@@ -246,5 +246,5 @@ When an incoming request has no matching route, the router will call the handler
 method. All the handlers registered via `Router.Use()` will also be called in advance. By default, the following two
 handlers are registered with `Router.NotFound()`:
 
-* `routing.MethodNotAllowedHandler`: a handler that sends an `Allow` HTTP header indicating the allowed HTTP methods for a requested URL
-* `routing.NotFoundHandler`: a handler triggering 404 HTTP error
+* `tigo.MethodNotAllowedHandler`: a handler that sends an `Allow` HTTP header indicating the allowed HTTP methods for a requested URL
+* `tigo.NotFoundHandler`: a handler triggering 404 HTTP error
