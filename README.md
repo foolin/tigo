@@ -15,6 +15,7 @@ The package has the following features:
 * URL creation according to the predefined routes
 
 This fork adds the following features:
+* add OnError handdler for panic.
 * add render function for view(use html/template)
 * add panic middleware
 * add logger middleware
