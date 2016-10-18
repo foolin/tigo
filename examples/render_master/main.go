@@ -23,41 +23,6 @@ func main()  {
 
 	//register admin router
 	admin.Get("/", func(ctx *tigo.Context) error {
-
-		/*
-
-		<!-- /views/admin/page.html content -->
-
-		{{layout "admin/master"}}
-
-		<h3>admin/page.html</h3>
-		<div>this admin/page.html</div>
-
-		*/
-
-		/*
-
-		<!-- /views/admin/master.html content -->
-
-		<!doctype html>
-
-		<html>
-		<head>
-		    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
-		    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
-		    <title>{{.title}}</title>
-		</head>
-
-		<body>
-		admin/master.html
-
-		<hr>
-		render page content will at here:
-		{{content}}
-		</body>
-		</html>
-
-		 */
 		return ctx.Render("admin/page", tigo.M{"title": "Tigo render"})
 	})
 
