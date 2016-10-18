@@ -131,7 +131,7 @@ Use context.Render()
 /views/page.html
 
 ```html
-		    <!---- /views/page.html content --->
+		    <!-- /views/page.html content -->
 
 		    <!doctype html>
 
@@ -152,7 +152,7 @@ Use context.Render()
 
 /views/layout/footer.html
 ```html
-		    <!---- /views/layout/footer.html content --->
+		    <!-- /views/layout/footer.html content -->
 
 		    Copyright &copy2016 by <a href="https://github.com/foolin/tigo">tigo</a>.
 ```
@@ -197,7 +197,7 @@ Use render with master page
 
 ```html
 
-        <!---- /views/admin/page.html content --->
+        <!-- /views/admin/page.html content -->
 
         {{layout "admin/master"}}
 
@@ -209,7 +209,7 @@ Use render with master page
 
 /views/admin/master.html
 ```html
-        <!---- /views/admin/master.html content --->
+        <!-- /views/admin/master.html content -->
 
         <!doctype html>
 

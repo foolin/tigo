@@ -19,7 +19,7 @@ func main()  {
 	//register router
 	router.Get("/", func(ctx *tigo.Context) error {
 		/*
-		    <!---- /views/page.html content --->
+		    <!-- /views/page.html content -->
 
 		    <!doctype html>
 
@@ -39,7 +39,7 @@ func main()  {
 		*/
 
 		/*
-		    <!---- /views/layout/footer.html content --->
+		    <!-- /views/layout/footer.html content -->
 
 		    Copyright &copy2016 by <a href="https://github.com/foolin/tigo">tigo</a>.
 

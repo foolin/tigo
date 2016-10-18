@@ -84,7 +84,7 @@ func Example_render() {
 	//register router
 	router.Get("/", func(ctx *tigo.Context) error {
 		/*
-		    <!---- /views/page.html content --->
+		    <!-- /views/page.html content -->
 
 		    <!doctype html>
 
@@ -104,7 +104,7 @@ func Example_render() {
 		*/
 
 		/*
-		    <!---- /views/layout/footer.html content --->
+		    <!-- /views/layout/footer.html content -->
 
 		    Copyright &copy2016 by <a href="https://github.com/foolin/tigo">tigo</a>.
 
@@ -145,7 +145,7 @@ func Example_renderMaster() {
 
 		/*
 
-		<!---- /views/admin/page.html content --->
+		<!-- /views/admin/page.html content -->
 
 		{{layout "admin/master"}}
 
@@ -156,7 +156,7 @@ func Example_renderMaster() {
 
 		/*
 
-		<!---- /views/admin/master.html content --->
+		<!-- /views/admin/master.html content -->
 
 		<!doctype html>
 

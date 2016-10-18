@@ -26,7 +26,7 @@ func main()  {
 
 		/*
 
-		<!---- /views/admin/page.html content --->
+		<!-- /views/admin/page.html content -->
 
 		{{layout "admin/master"}}
 
@@ -37,7 +37,7 @@ func main()  {
 
 		/*
 
-		<!---- /views/admin/master.html content --->
+		<!-- /views/admin/master.html content -->
 
 		<!doctype html>
 
