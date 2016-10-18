@@ -421,3 +421,8 @@ handlers are registered with `Router.NotFound()`:
 
 * `tigo.MethodNotAllowedHandler`: a handler that sends an `Allow` HTTP header indicating the allowed HTTP methods for a requested URL
 * `tigo.NotFoundHandler`: a handler triggering 404 HTTP error
+
+
+### Docs
+
+See http://godoc.org/github.com/foolin/tigo .
