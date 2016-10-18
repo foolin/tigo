@@ -423,6 +423,7 @@ handlers are registered with `Router.NotFound()`:
 * `tigo.NotFoundHandler`: a handler triggering 404 HTTP error
 
 
-### Docs
+## Docs
 
 See http://godoc.org/github.com/foolin/tigo .
+
