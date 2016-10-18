@@ -36,7 +36,7 @@ go get github.com/foolin/tigo
 
 ## Getting Started
 
-**Default example:
+** Default example:
 ```go
 	//new default router
 	router := tigo.Default()
@@ -62,7 +62,7 @@ go get github.com/foolin/tigo
 ```
 
 
-**New example:
+** New example:
 ```go
 
 	//new router
@@ -87,7 +87,7 @@ go get github.com/foolin/tigo
 ```
 
 
-**Render example:
+** Render example:
 ```go
 
 	//new router
@@ -139,7 +139,7 @@ go get github.com/foolin/tigo
 ```
 
 
-**Render master example:
+** Render master example:
 ```go
 
 	//new router
