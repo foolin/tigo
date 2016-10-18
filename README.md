@@ -39,29 +39,24 @@ go get github.com/foolin/tigo
 
 #### Default example:
 ```go
-	//new default router
+
 	router := tigo.Default()
 
-	//register router
 	router.Get("/", func(ctx *tigo.Context) error {
-		content := `
-			Hello tigo!!!<hr>
-			visit api: <a href="/api/done">api/done</a>
-		`
 		//out html
-		return ctx.HTML(content)
+		return ctx.HTML(`
+			Hello tigo!!!<hr>
+			visit api: <a href="/api/tigo">api/tigo</a>
+		`)
 	})
 
 	router.Get("/api/<action>", func(ctx *tigo.Context) error {
-
-		//json object
-		data := struct {
-			Ip string `json:"ip"`
-			Action string `json:"action"`
-		}{ctx.RequestIP(), ctx.Param("action")}
-
 		//out json
-		return ctx.JSON(data)
+		return ctx.JSON(tigo.M{
+			"name": "tigo",
+			"ip": ctx.RequestIP(),
+			"action": ctx.Param("action"),
+		})
 	})
 
 	//run
@@ -70,6 +65,7 @@ go get github.com/foolin/tigo
 	if err != nil {
 		log.Fatalf("run error: %v", err)
 	}
+	
 ```
 
 
