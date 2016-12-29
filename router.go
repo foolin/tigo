@@ -86,6 +86,10 @@ func (r *Router) SetRender(render Render) {
 	r.render = render
 }
 
+func (r *Router) Render() Render {
+	return r.render
+}
+
 // Error handler error.
 func (r *Router) OnError(errHandler ErrorHandler) {
 	r.errorHandler = errHandler

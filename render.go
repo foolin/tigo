@@ -60,6 +60,7 @@ func NewHtmlRender(config HtmlRenderConfig) Render {
 		viewRoot: config.ViewRoot,
 		ext: config.Extension,
 		template:    template.New(filepath.Base(config.ViewRoot)),
+		funcs: config.Funcs,
 	}
 }
 
@@ -73,6 +74,13 @@ func (r *HtmlRender) Init() error {
 	if !info.IsDir() {
 		//return fmt.Errorf("tigo: view root:%s is not a directory", r.viewRoot)
 		return nil
+	}
+	allFuncs := template.FuncMap{}
+	for k, v := range emptyFuncs {
+		allFuncs[k] = v
+	}
+	for k, v := range r.funcs {
+		allFuncs[k] = v
 	}
 	werr := filepath.Walk(r.viewRoot, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -107,7 +115,8 @@ func (r *HtmlRender) Init() error {
 		name = strings.TrimSuffix(name, extension) // remove extension
 
 		t := r.template.New(name)
-		_, err = t.Funcs(emptyFuncs).Parse(string(data))
+		content := fmt.Sprintf("%s", data)
+		_, err = t.Funcs(allFuncs).Parse(content)
 		if err != nil {
 			return fmt.Errorf("tigo: view root:%s, error: %v", r.viewRoot, err)
 		}
@@ -121,7 +130,6 @@ func (r *HtmlRender) Init() error {
 	return nil
 }
 
-
 func (r *HtmlRender) Render(out io.Writer, name string, data interface{}) error {
 	err := r.executeRender(out, name, data)
 	if err != nil {
@@ -134,7 +142,7 @@ func (r *HtmlRender) Render(out io.Writer, name string, data interface{}) error 
 func (r *HtmlRender) executeRender(out io.Writer, name string, data interface{}) error {
 	var masterName string
 	var renderTimes map[string]int
-	var funcs = template.FuncMap{
+	var allFuncs = template.FuncMap{
 		"content": emptyFuncs["content"],
 		"layout": func(layoutName string) (template.HTML, error) {
 			masterName = layoutName
@@ -152,34 +160,33 @@ func (r *HtmlRender) executeRender(out io.Writer, name string, data interface{})
 			return "", nil
 		},
 	}
-
 	//执行页面
 	renderTimes = make(map[string]int, 0)
-	buf, err := r.executeTemplateBuf(name, data, funcs)
+	buf, err := r.executeTemplateBuf(name, data, allFuncs)
 	if err != nil {
 		return err
 	}
-	if masterName == ""{
+	if masterName == "" {
 		//直接输出
 		_, err = out.Write(buf.Bytes())
 		return err
 	}
 
 	//执行母版页
-	funcs["content"] = func() (template.HTML, error) {
+	allFuncs["content"] = func() (template.HTML, error) {
 		return template.HTML(buf.Bytes()), nil
 	}
 	//如果含有layout，则执行
 	renderTimes = make(map[string]int, 0)
-	return r.executeTemplateRaw(out, masterName, data, funcs)
+	return r.executeTemplateRaw(out, masterName, data, allFuncs)
 }
 
 func (r *HtmlRender) executeTemplateRaw(out io.Writer, name string, data interface{}, funcs template.FuncMap) error {
 	allFuncs := template.FuncMap{}
-	for k, v := range funcs{
+	for k, v := range funcs {
 		allFuncs[k] = v
 	}
-	for k, v := range r.funcs{
+	for k, v := range r.funcs {
 		allFuncs[k] = v
 	}
 	return r.template.Funcs(allFuncs).ExecuteTemplate(out, name, data)

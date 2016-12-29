@@ -10,6 +10,7 @@ import (
 	"errors"
 	"strings"
 	"net"
+	"time"
 )
 // Context represents the contextual data and environment while processing an incoming HTTP request.
 type Context struct {
@@ -167,18 +168,18 @@ func (c *Context) PostString(name string) string {
 func (c *Context) FormMutiValue(key string) [][]byte {
 	arr := make([][]byte, 0)
 	mv := c.QueryArgs().PeekMulti(key)
-	if len(mv) > 0{
+	if len(mv) > 0 {
 		arr = append(arr, mv...)
 	}
 	mv = c.PostArgs().PeekMulti(key)
-	if len(mv) > 0{
+	if len(mv) > 0 {
 		arr = append(arr, mv...)
 	}
 	mf, err := c.MultipartForm()
 	if err == nil && mf.Value != nil {
 		mstrs := mf.Value[key]
 		if len(mstrs) > 0 {
-			for _, v := range mstrs{
+			for _, v := range mstrs {
 				arr = append(arr, []byte(v))
 			}
 		}
@@ -212,14 +213,14 @@ func (c *Context) FormMutiString(key string) []string {
 }
 
 // SetHeader set resposne header, use Add for setting multiple header values under the same key.
-func (c *Context) SetHeader(key, value string)  {
+func (c *Context) SetHeader(key, value string) {
 	c.Response.Header.Set(key, value)
 }
 
 // writeWithStatusCode writes the given data of arbitrary type to the response.
 // The method calls the Serialize() method to convert the data into a byte array and then writes
 // the byte array to the response.
-func (c *Context) writeWithContentType(contentType string,  bytes []byte) error {
+func (c *Context) writeWithContentType(contentType string, bytes []byte) error {
 	c.SetContentType(contentType)
 	_, err := c.Write(bytes)
 	if err != nil {
@@ -231,26 +232,27 @@ func (c *Context) writeWithContentType(contentType string,  bytes []byte) error 
 // JSON writes json values to the response.
 func (c *Context) JSON(data interface{}) (err error) {
 	var bytes []byte
-	if bytes, err = json.Marshal(data); err == nil{
+	if bytes, err = json.Marshal(data); err == nil {
 		err = c.writeWithContentType("application/json; charset=utf-8", bytes)
 	}
 	return
 }
 
 // Text writes text values to the response.
-func (c *Context) Text(content string) error{
+func (c *Context) Text(content string) error {
 	return c.writeWithContentType("text/plain; charset=utf-8", []byte(content))
 }
 
 // HTML writes HTML values to the response.
-func (c *Context) HTML(content string) error{
+func (c *Context) HTML(content string) error {
 	return c.writeWithContentType("text/html; charset=utf-8", []byte(content))
 }
 
 func (c *Context) clientAllowsGzip() bool {
 	if h := c.RequestHeader("Accept-Encoding"); h != "" {
 		for _, v := range strings.Split(h, ";") {
-			if strings.Contains(v, "gzip") { // we do Contains because sometimes browsers has the q=, we don't use it atm. || strings.Contains(v,"deflate"){
+			if strings.Contains(v, "gzip") {
+				// we do Contains because sometimes browsers has the q=, we don't use it atm. || strings.Contains(v,"deflate"){
 				return true
 			}
 		}
@@ -260,7 +262,7 @@ func (c *Context) clientAllowsGzip() bool {
 }
 
 // Gzip accepts bytes, which are compressed to gzip format and sent to the client
-func (c *Context) Gzip(b []byte, status int) (err error){
+func (c *Context) Gzip(b []byte, status int) (err error) {
 	c.RequestCtx.Response.Header.Add("Vary", "Accept-Encoding")
 	if c.clientAllowsGzip() {
 		_, err = fasthttp.WriteGzip(c.RequestCtx.Response.BodyWriter(), b)
@@ -279,17 +281,17 @@ func (c *Context) IsAjax() bool {
 }
 
 // BindJson post for json
-func (c *Context) BindJson(out interface{}) error  {
+func (c *Context) BindJson(out interface{}) error {
 	bytes := c.Request.Body()
-	if len(bytes) <= 0{
+	if len(bytes) <= 0 {
 		return nil
 	}
 	return json.Unmarshal(bytes, &out)
 }
 
 // Render render layout
-func (c *Context) Render(name string, data interface{}) error{
-	if c.router.render == nil{
+func (c *Context) Render(name string, data interface{}) error {
+	if c.router.render == nil {
 		return errors.New("Render engine not found.")
 	}
 	c.SetContentType("text/html; charset=utf-8")
@@ -303,10 +305,26 @@ func (c *Context) init(ctx *fasthttp.RequestCtx) {
 	c.index = -1
 }
 
-func arrBytes2Strs(arrBytes [][]byte) []string  {
+func arrBytes2Strs(arrBytes [][]byte) []string {
 	arrStr := make([]string, len(arrBytes))
 	for i, v := range arrBytes {
 		arrStr[i] = string(v)
 	}
 	return arrStr
+}
+
+func (c *Context) GetCookie(key string) string {
+	return string(c.Request.Header.Cookie(key))
+}
+
+func (c *Context) SetCookie(key string, value string, expire time.Time) {
+	cookie := &fasthttp.Cookie{}
+	cookie.SetKey(key)
+	cookie.SetValue(value)
+	cookie.SetExpire(expire)
+	c.Response.Header.SetCookie(cookie)
+}
+
+func (c *Context) DelCookie(key string) {
+	c.Response.Header.DelCookie(key)
 }
