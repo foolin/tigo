@@ -278,7 +278,7 @@ func (c *Context) Gzip(b []byte, status int) (err error) {
 //
 // Read more at: http://www.w3schools.com/ajax/
 func (c *Context) IsAjax() bool {
-	return c.RequestHeader("HTTP_X_REQUESTED_WITH") == "XMLHttpRequest"
+	return c.RequestHeader("X-Requested-With") == "XMLHttpRequest"
 }
 
 // BindJson post for json
@@ -314,11 +314,11 @@ func arrBytes2Strs(arrBytes [][]byte) []string {
 	return arrStr
 }
 
-func (c *Context) GetCookie(key string) string {
+func (c *Context) GetCookieValue(key string) string {
 	return string(c.Request.Header.Cookie(key))
 }
 
-func (c *Context) SetCookie(key string, value string, expire time.Time) {
+func (c *Context) SetCookieValue(key string, value string, expire time.Time) {
 	cookie := &fasthttp.Cookie{}
 	cookie.SetKey(key)
 	cookie.SetValue(value)
@@ -342,4 +342,8 @@ func (c *Context) Error(err error) {
 	}
 	c.router.OnError(c, err)
 	c.Abort()
+}
+
+func (ctx *Context) Redirect(uri string) {
+	ctx.RequestCtx.Redirect(uri, http.StatusOK)
 }
