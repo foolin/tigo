@@ -11,6 +11,7 @@ import (
 	"strings"
 	"net"
 	"time"
+	"net/http"
 )
 // Context represents the contextual data and environment while processing an incoming HTTP request.
 type Context struct {
@@ -327,4 +328,18 @@ func (c *Context) SetCookie(key string, value string, expire time.Time) {
 
 func (c *Context) DelCookie(key string) {
 	c.Response.Header.DelCookie(key)
+}
+
+func (c *Context) NotFound() error {
+	return c.router.OnNotFound(c)
+}
+
+func (c *Context) Error(err error) {
+	if httpError, ok := err.(HTTPError); ok {
+		c.RequestCtx.Response.SetStatusCode(httpError.StatusCode())
+	}else{
+		c.RequestCtx.Response.SetStatusCode(http.StatusInternalServerError)
+	}
+	c.router.OnError(c, err)
+	c.Abort()
 }

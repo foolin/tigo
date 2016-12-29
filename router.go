@@ -18,14 +18,13 @@ type (
 	// Router manages routes and dispatches HTTP requests to the handlers of the matching routes.
 	Router struct {
 		RouteGroup
-		pool             sync.Pool
-		routes           map[string]*Route
-		stores           map[string]routeStore
-		maxParams        int
-		notFound         []Handler
-		notFoundHandlers []Handler
-		errorHandler     ErrorHandler
-		render           Render
+		OnNotFound  Handler
+		OnError     ErrorHandler
+		pool      sync.Pool
+		routes    map[string]*Route
+		stores    map[string]routeStore
+		maxParams int
+		render    Render
 	}
 
 	// routeStore stores route paths and the corresponding handlers.
@@ -57,7 +56,7 @@ func (r *Router) HandleRequest(ctx *fasthttp.RequestCtx) {
 	c.SetHeader("Server", "tigo")
 	c.handlers, c.pnames = r.find(string(ctx.Method()), string(ctx.Path()), c.pvalues)
 	if err := c.Next(); err != nil {
-		r.errorHandler(c, err)
+		r.OnError(c, err)
 	}
 	r.pool.Put(c)
 }
@@ -71,15 +70,14 @@ func (r *Router) Route(name string) *Route {
 // Use appends the specified handlers to the router and shares them with all routes.
 func (r *Router) Use(handlers ...Handler) {
 	r.RouteGroup.Use(handlers...)
-	r.notFoundHandlers = combineHandlers(r.handlers, r.notFound)
 }
 
 // NotFound specifies the handlers that should be invoked when the router cannot find any route matching a request.
 // Note that the handlers registered via Use will be invoked first in this case.
-func (r *Router) NotFound(handlers ...Handler) {
-	r.notFound = handlers
-	r.notFoundHandlers = combineHandlers(r.handlers, r.notFound)
-}
+//func (r *Router) NotFound(handlers ...Handler) {
+//	r.notFound = handlers
+//	r.notFoundHandlers = combineHandlers(r.handlers, r.notFound)
+//}
 
 // SetRender set render engine for Render()
 func (r *Router) SetRender(render Render) {
@@ -88,11 +86,6 @@ func (r *Router) SetRender(render Render) {
 
 func (r *Router) Render() Render {
 	return r.render
-}
-
-// Error handler error.
-func (r *Router) OnError(errHandler ErrorHandler) {
-	r.errorHandler = errHandler
 }
 
 func (r *Router) add(method, path string, handlers []Handler) {
@@ -114,7 +107,7 @@ func (r *Router) find(method, path string, pvalues []string) (handlers []Handler
 	if hh != nil {
 		return hh.([]Handler), pnames
 	}
-	return r.notFoundHandlers, pnames
+	return []Handler{r.OnNotFound}, pnames
 }
 
 func (r *Router) findAllowedMethods(path string) map[string]bool {
@@ -137,9 +130,13 @@ func NotFoundHandler(*Context) error {
 // HttpErrorHandler is the error handler for handling any unhandled errors.
 func HttpErrorHandler(c *Context, err error) {
 	if httpError, ok := err.(HTTPError); ok {
-		c.Error(httpError.Error(), httpError.StatusCode())
+		if httpError.StatusCode()== http.StatusNotFound{
+			c.RequestCtx.NotFound()
+		}else{
+			c.RequestCtx.Error(httpError.Error(), httpError.StatusCode())
+		}
 	} else {
-		c.Error(err.Error(), http.StatusInternalServerError)
+		c.RequestCtx.Error(err.Error(), http.StatusInternalServerError)
 	}
 }
 

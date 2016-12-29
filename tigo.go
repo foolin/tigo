@@ -12,8 +12,9 @@ func New() *Router {
 		stores: make(map[string]routeStore),
 	}
 	r.RouteGroup = *newRouteGroup("", r, make([]Handler, 0))
-	r.NotFound(MethodNotAllowedHandler, NotFoundHandler)
-	r.OnError(HttpErrorHandler)
+	//r.NotFound(MethodNotAllowedHandler, NotFoundHandler)
+	r.OnNotFound = NotFoundHandler
+	r.OnError = HttpErrorHandler
 	r.pool.New = func() interface{} {
 		ctx := &Context{
 			pvalues: make([]string, r.maxParams),
