@@ -59,12 +59,12 @@ func NewHtmlRender(config HtmlRenderConfig) Render {
 	return &HtmlRender{
 		viewRoot: config.ViewRoot,
 		ext: config.Extension,
-		template:    template.New(filepath.Base(config.ViewRoot)),
+		template: nil,
 		funcs: config.Funcs,
 	}
 }
 
-// Init for initialize, when running, this method is executed.
+//interface
 func (r *HtmlRender) Init() error {
 	info, err := os.Stat(r.viewRoot)
 	if err != nil {
@@ -82,6 +82,7 @@ func (r *HtmlRender) Init() error {
 	for k, v := range r.funcs {
 		allFuncs[k] = v
 	}
+	r.template = template.New(filepath.Base(r.viewRoot))
 	werr := filepath.Walk(r.viewRoot, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return fmt.Errorf("tigo: view root:%s, error: %v", r.viewRoot, err)
@@ -95,11 +96,6 @@ func (r *HtmlRender) Init() error {
 			return nil
 		}
 
-		data, err := ioutil.ReadFile(path)
-		if err != nil {
-			return fmt.Errorf("tigo: view root:%s, error: %v", r.viewRoot, err)
-		}
-
 		// We remove the directory name from the path
 		// this means if we have directory foo, with file bar.tpl
 		// full path for bar file foo/bar.tpl
@@ -107,13 +103,14 @@ func (r *HtmlRender) Init() error {
 		//
 		// NOTE we don't account for the opening slash, when dir ends with /.
 		name := path[len(r.viewRoot):]
-
 		name = filepath.ToSlash(name)
-
 		name = strings.TrimPrefix(name, "/") // case  we missed the opening slash
-
 		name = strings.TrimSuffix(name, extension) // remove extension
 
+		data, err := ioutil.ReadFile(path)
+		if err != nil {
+			return fmt.Errorf("tigo: view root:%s, error: %v", r.viewRoot, err)
+		}
 		t := r.template.New(name)
 		content := fmt.Sprintf("%s", data)
 		_, err = t.Funcs(allFuncs).Parse(content)
