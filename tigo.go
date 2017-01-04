@@ -3,6 +3,7 @@ package tigo
 import (
 	"github.com/valyala/fasthttp"
 	"os"
+	"html/template"
 )
 
 // New creates a new Router object.
@@ -33,9 +34,13 @@ func Default() *Router {
 	//panic
 	r.Use(Panic(os.Stderr))
 	//tempate
-	r.render = NewHtmlRender(HtmlRenderConfig{
-		ViewRoot: "views",
+	r.render = NewViewRender(ViewRenderConfig{
+		Root: "views",
 		Extension: ".html",
+		Master: "master",
+		Partials: []string{},
+		Funcs: make(template.FuncMap),
+		DisableCache: true,
 	})
 	return r
 }

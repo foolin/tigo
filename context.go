@@ -290,13 +290,30 @@ func (c *Context) BindJson(out interface{}) error {
 	return json.Unmarshal(bytes, &out)
 }
 
-// Render render layout
+// Render render with master
 func (c *Context) Render(name string, data interface{}) error {
+	return c.doRender(name, data, false)
+
+}
+
+// Render render only file
+func (c *Context) RenderFile(name string, data interface{}) error {
+	return c.doRender(name, data, true)
+}
+
+func (c *Context) doRender(name string, data interface{}, isRenderFile bool) error {
 	if c.router.render == nil {
 		return errors.New("Render engine not found.")
 	}
-	c.SetContentType("text/html; charset=utf-8")
-	return c.router.render.Render(c.Response.BodyWriter(), name, data)
+	contentType := string(c.Response.Header.ContentType())
+	if contentType == "" || !strings.Contains(contentType, "text/html"){
+		c.SetContentType("text/html; charset=utf-8")
+	}
+	if isRenderFile{
+		return c.router.render.RenderFile(c.Response.BodyWriter(), name, data)
+	}else{
+		return c.router.render.Render(c.Response.BodyWriter(), name, data)
+	}
 }
 
 // init sets the request and response of the context and resets all other properties.
