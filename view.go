@@ -34,11 +34,11 @@ func NewViewRender(config ViewRenderConfig) *ViewRender {
 }
 
 func (r *ViewRender) Init() error {
-	if r.config.Root != "" {
-		if _, err := os.Stat(r.config.Root); os.IsNotExist(err) {
-			return fmt.Errorf("ViewRender view root: %v not exists!", r.config.Root)
-		}
-	}
+	//if r.config.Root != "" {
+	//	if _, err := os.Stat(r.config.Root); os.IsNotExist(err) {
+	//		return fmt.Errorf("ViewRender view root: %v not exists!", r.config.Root)
+	//	}
+	//}
 	return nil
 }
 
@@ -69,16 +69,13 @@ func (r *ViewRender) execute(out io.Writer, name string, data interface{}, useMa
 	r.tplMutex.RUnlock()
 
 	exeName := name
-	if useMaster{
-		if r.config.Master == ""{
-			return fmt.Errorf("ViewRender master is empty!")
-		}
+	if useMaster && r.config.Master != ""{
 		exeName = r.config.Master
 	}
 
 	if !ok || r.config.DisableCache {
 		tplList := []string{name}
-		if useMaster {
+		if useMaster && r.config.Master != ""{
 			tplList = append(tplList, r.config.Master)
 		}
 		tplList = append(tplList, r.config.Partials...)
