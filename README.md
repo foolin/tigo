@@ -298,7 +298,7 @@ can be used to match any number of arbitrary characters. Below are some examples
 
 * `/users/<username>`: matches `/users/admin`
 * `/users/accnt-<id:\d+>`: matches `/users/accnt-123`, but not `/users/accnt-admin`
-* `/users/api/<id:.*>`: matches `/users/api/list`, `/users/api/one/123/...`
+* `/users/api<id:.*>`: matches `/users/api-abc`, `/users/api/list/page/1`
 * `/users/<username>/*`: matches `/users/admin/profile/address`
 
 When a URL path matches a route, the matching parameters on the URL path can be accessed via `Context.Param()`:

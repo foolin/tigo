@@ -17,12 +17,13 @@ type ViewRender struct {
 }
 
 type ViewRenderConfig struct {
-	Root         string           //view root
-	Extension    string           //template extension
-	Master       string           //template master
-	Partials     []string         //template partial, such as head, foot
-	Funcs        template.FuncMap //template functions
-	DisableCache bool             //disable cache, debug mode
+	Root              string           //view root
+	Extension         string           //template extension
+	Master            string           //template master
+	Partials          []string         //template partial, such as head, foot
+	Funcs             template.FuncMap //template functions
+	DisableCache      bool             //disable cache, debug mode
+	EnableFilePartial bool             //enable render file use partial
 }
 
 func NewViewRender(config ViewRenderConfig) *ViewRender {
@@ -69,16 +70,25 @@ func (r *ViewRender) execute(out io.Writer, name string, data interface{}, useMa
 	r.tplMutex.RUnlock()
 
 	exeName := name
-	if useMaster && r.config.Master != ""{
+	if useMaster && r.config.Master != "" {
 		exeName = r.config.Master
 	}
 
 	if !ok || r.config.DisableCache {
 		tplList := []string{name}
-		if useMaster && r.config.Master != ""{
-			tplList = append(tplList, r.config.Master)
+		if useMaster{
+			//render()
+			if r.config.Master != ""{
+				tplList = append(tplList, r.config.Master)
+			}
+			tplList = append(tplList, r.config.Partials...)
+		}else{
+			//renderFile()
+			if r.config.EnableFilePartial{
+				tplList = append(tplList, r.config.Partials...)
+			}
 		}
-		tplList = append(tplList, r.config.Partials...)
+
 
 		// Loop through each template and test the full path
 		tpl = template.New(name)
@@ -90,13 +100,13 @@ func (r *ViewRender) execute(out io.Writer, name string, data interface{}, useMa
 			}
 			data, err := ioutil.ReadFile(path)
 			if err != nil {
-				return fmt.Errorf("ViewRender render read name:%v, path:%v, error: %v",  v, path, err)
+				return fmt.Errorf("ViewRender render read name:%v, path:%v, error: %v", v, path, err)
 			}
 			t := tpl.New(v)
 			content := fmt.Sprintf("%s", data)
 			_, err = t.Funcs(allFuncs).Parse(content)
 			if err != nil {
-				return fmt.Errorf("ViewRender render parser name:%v, path:%v, error: %v",  v, path, err)
+				return fmt.Errorf("ViewRender render parser name:%v, path:%v, error: %v", v, path, err)
 			}
 		}
 		r.tplMutex.Lock()
