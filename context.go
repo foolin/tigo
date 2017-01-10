@@ -130,14 +130,14 @@ func (c *Context) QueryString(key string) string {
 	return string(val)
 }
 
-// QueryMutiString returns query value associated with the given key.
-func (c *Context) QueryMutiString(key string) []string {
+// QueryMultiString returns query value associated with the given key.
+func (c *Context) QueryMultiString(key string) []string {
 	arrBytes := c.QueryArgs().PeekMulti(key)
 	return arrBytes2Strs(arrBytes)
 }
 
-// PostMutiString returns the post data values as []string of a single key/name
-func (c *Context) PostMutiString(name string) []string {
+// PostMultiString returns the post data values as []string of a single key/name
+func (c *Context) PostMultiString(name string) []string {
 	arrBytes := c.PostArgs().PeekMulti(name)
 	return arrBytes2Strs(arrBytes)
 }
@@ -145,13 +145,13 @@ func (c *Context) PostMutiString(name string) []string {
 // PostString returns the post data value of a single key/name
 // returns an empty string if nothing found
 func (c *Context) PostString(name string) string {
-	if v := c.PostMutiString(name); len(v) > 0 {
+	if v := c.PostMultiString(name); len(v) > 0 {
 		return v[0]
 	}
 	return ""
 }
 
-// FormMutiValue returns form value associated with the given key.
+// FormMultiValue returns form value associated with the given key.
 //
 // The value is searched in the following places:
 //
@@ -166,7 +166,7 @@ func (c *Context) PostString(name string) string {
 //   * FormFile for obtaining uploaded files.
 //
 // The returned value is valid until returning from RequestHandler.
-func (c *Context) FormMutiValue(key string) [][]byte {
+func (c *Context) FormMultiValue(key string) [][]byte {
 	arr := make([][]byte, 0)
 	mv := c.QueryArgs().PeekMulti(key)
 	if len(mv) > 0 {
@@ -193,7 +193,7 @@ func (c *Context) FormString(name string) string {
 	return string(c.FormValue(name))
 }
 
-// FormMutiString returns form value associated with the given key.
+// FormMultiString returns form value associated with the given key.
 //
 // The value is searched in the following places:
 //
@@ -208,8 +208,8 @@ func (c *Context) FormString(name string) string {
 //   * FormFile for obtaining uploaded files.
 //
 // The returned value is valid until returning from RequestHandler.
-func (c *Context) FormMutiString(key string) []string {
-	arrBytes := c.FormMutiValue(key)
+func (c *Context) FormMultiString(key string) []string {
+	arrBytes := c.FormMultiValue(key)
 	return arrBytes2Strs(arrBytes)
 }
 

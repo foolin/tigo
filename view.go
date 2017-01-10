@@ -8,6 +8,7 @@ import (
 	"io"
 	"path/filepath"
 	"io/ioutil"
+	"bytes"
 )
 
 type ViewRender struct {
@@ -60,6 +61,12 @@ func (r *ViewRender) execute(out io.Writer, name string, data interface{}, useMa
 	var ok bool
 
 	allFuncs := make(template.FuncMap, 0)
+	allFuncs["include"] = func(layout string) (template.HTML, error) {
+		buf := new(bytes.Buffer)
+		err := r.execute(buf, layout, data, false)
+		return template.HTML(buf.String()), err
+	}
+
 	// Get the plugin collection
 	for k, v := range r.config.Funcs {
 		allFuncs[k] = v
