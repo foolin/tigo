@@ -24,7 +24,7 @@ type ViewRenderConfig struct {
 	Partials          []string         //template partial, such as head, foot
 	Funcs             template.FuncMap //template functions
 	DisableCache      bool             //disable cache, debug mode
-	EnableFilePartial bool             //enable render file use partial
+	DisableFilePartial bool             //enable render file use partial
 }
 
 func NewViewRender(config ViewRenderConfig) *ViewRender {
@@ -91,7 +91,7 @@ func (r *ViewRender) execute(out io.Writer, name string, data interface{}, useMa
 			tplList = append(tplList, r.config.Partials...)
 		}else{
 			//renderFile()
-			if r.config.EnableFilePartial{
+			if !r.config.DisableFilePartial{
 				tplList = append(tplList, r.config.Partials...)
 			}
 		}

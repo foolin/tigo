@@ -115,7 +115,7 @@ Use context.Render()
 			},
 		},
 		DisableCache: false,
-		EnableFilePartial: true,
+		DisableFilePartial: false,
 	}))
 	
 	//register router
@@ -413,4 +413,8 @@ handlers are registered with `Router.NotFound()`:
 ## Docs
 
 See http://godoc.org/github.com/foolin/tigo .
+
+## Links
+
+[tigo-admin](https://github.com/foolin/tigo-admin "Tigo admin"){:target="_blank"} admin template demo with tigo.
 

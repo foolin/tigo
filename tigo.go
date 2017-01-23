@@ -50,7 +50,8 @@ func Default() *Router {
 		Master: "master",
 		Partials: []string{},
 		Funcs: make(template.FuncMap),
-		DisableCache: true,
+		DisableCache: false,
+		DisableFilePartial: true,
 	})
 	return r
 }

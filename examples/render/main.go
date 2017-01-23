@@ -23,7 +23,7 @@ func main() {
 			},
 		},
 		DisableCache: false,
-		EnableFilePartial: true,
+		DisableFilePartial: false,
 	}))
 
 	//register router
