@@ -141,26 +141,6 @@ Use context.Render()
 	
 ```
 
-/views/index.html
-```html
-		    <!-- /views/page.html content -->
-
-		    <!doctype html>
-
-		    <html>
-		    <head>
-			<meta http-equiv="Content-type" content="text/html; charset=utf-8" />
-			<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
-			<title>{{.title}}</title>
-		    </head>
-
-		    <body>
-			page.html
-			<hr>
-			{{render "layout/footer"}}
-		    </body>
-		    </html>
-```
 
 /views/layout/master.html
 ```html
