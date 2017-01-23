@@ -416,5 +416,5 @@ See http://godoc.org/github.com/foolin/tigo .
 
 ## Links
 
-[tigo-admin](https://github.com/foolin/tigo-admin "Tigo admin"){:target="_blank"} admin template demo with tigo.
+* [tigo-admin: admin template demo with tigo](https://github.com/foolin/tigo-admin "Tigo admin")
 
