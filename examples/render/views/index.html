@@ -1,0 +1,15 @@
+{{define "head"}}
+    <style>
+        .hello{ color: red;}
+        hr{ border: 1px #ccc dashed;}
+    </style>
+{{end}}
+
+
+{{define "content"}}
+    <h1 class="hello">This is content!!!!</h1>
+    {{echo `<!-- echo function out, you can see it at source! -->`}}
+    {{call $.escape `<!-- Hello world-->`}}
+    <hr>
+    <p><a href="/page_file">page file</a></p>
+{{end}}

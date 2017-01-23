@@ -1,4 +1,4 @@
-<!-- /views/admin/master.html content -->
+<!-- /views/admin/master.html -->
 
 <!doctype html>
 
@@ -7,6 +7,7 @@
     <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
     <title>{{.title}}</title>
+    {{template "head" .}}
 </head>
 
 <body>
@@ -14,6 +15,8 @@ admin/master.html
 
 <hr>
 render page content will at here:
-{{content}}
+{{template "content" .}}
+
+{{include "layout/footer"}}
 </body>
 </html>

@@ -104,15 +104,32 @@ Use context.Render()
 	//new router
 	router := tigo.New()
 
-	//set render, tigo.Default() will default initialize.
-	router.SetRender(tigo.NewHtmlRender(tigo.HtmlRenderConfig{
-		ViewRoot:  "views",
+	router.SetRender(tigo.NewViewRender(tigo.ViewRenderConfig{
+		Root: "views",
 		Extension: ".html",
+		Master: "layout/master",
+		Partials: []string{"layout/footer"},
+		Funcs: template.FuncMap{
+			"echo": func(content string) template.HTML {
+				return template.HTML(content)
+			},
+		},
+		DisableCache: false,
+		EnableFilePartial: true,
 	}))
-
+	
 	//register router
 	router.Get("/", func(ctx *tigo.Context) error {
-		return ctx.Render("page", tigo.M{"title": "Tigo render"})
+		return ctx.Render("index", tigo.M{
+			"title": "Index title!",
+			"escape": func(content string) string {
+				return template.HTMLEscapeString(content)
+			},
+		})
+	})
+
+	router.Get("/page_file", func(ctx *tigo.Context) error {
+		return ctx.RenderFile("page_file", tigo.M{"title": "Page file title!!"})
 	})
 
 	//run
@@ -124,8 +141,7 @@ Use context.Render()
 	
 ```
 
-/views/page.html
-
+/views/index.html
 ```html
 		    <!-- /views/page.html content -->
 
@@ -146,86 +162,80 @@ Use context.Render()
 		    </html>
 ```
 
-/views/layout/footer.html
+/views/layout/master.html
 ```html
-		    <!-- /views/layout/footer.html content -->
-
-		    Copyright &copy2016 by <a href="https://github.com/foolin/tigo">tigo</a>.
-```
-
-
-#### Render master example:
-
-Use render with master page
-
-```go
-
-	//new router
-    router := tigo.Default()
-
-    admin := router.Group("/admin")
-
-    //register router
-    router.Get("/", func(ctx *tigo.Context) error {
-        content := `
-            Hello tigo!!!<hr>
-            visit admin: <a href="/admin/">/admin/</a>
-        `
-        //out json
-        return ctx.HTML(content)
-    })
-
-    //register admin router
-    admin.Get("/", func(ctx *tigo.Context) error {
-        return ctx.Render("admin/page", tigo.M{"title": "Tigo render"})
-    })
-
-    //run
-    log.Printf("run on :8080")
-    err := router.Run(":8080")
-    if err != nil {
-        log.Fatalf("run error: %v", err)
-    }
-	
-```
-
-/views/admin/page.html
-
-```html
-
-        <!-- /views/admin/page.html content -->
-
-        {{layout "admin/master"}}
-
-        <h3>admin/page.html</h3>
-        <div>this admin/page.html</div>
-
-```
-
-
-/views/admin/master.html
-```html
-        <!-- /views/admin/master.html content -->
-
-        <!doctype html>
-
-        <html>
-        <head>
-            <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
-            <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
-            <title>{{.title}}</title>
-        </head>
-
-        <body>
-        admin/master.html
-
-        <hr>
-        render page content will at here:
-        {{content}}
-        </body>
-        </html>
+    <!-- /views/admin/master.html -->
+    
+    <!doctype html>
+    
+    <html>
+    <head>
+        <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+        <title>{{.title}}</title>
+        {{template "head" .}}
+    </head>
+    
+    <body>
+    admin/master.html
+    
+    <hr>
+    render page content will at here:
+    {{template "content" .}}
+    
+    {{include "layout/footer"}}
+    </body>
+    </html>
         
 ```
+
+/views/layout/footer.html
+```html
+    <!-- /views/layout/footer.html -->
+    Copyright &copy2016 by <a href="https://github.com/foolin/tigo">tigo</a>.
+```
+
+/views/index.html
+```html
+    {{define "head"}}
+        <style>
+            .hello{ color: red;}
+            hr{ border: 1px #ccc dashed;}
+        </style>
+    {{end}}
+    
+    
+    {{define "content"}}
+        <h1 class="hello">This is content!!!!</h1>
+        {{echo `<!-- echo function out, you can see it at source! -->`}}
+        {{call $.escape `<!-- Hello world-->`}}
+        <hr>
+        <p><a href="/page_file">page file</a></p>
+    {{end}}
+```
+
+/views/page_file.html
+```html
+    <!-- /views/page_file.html -->
+    <!doctype html>
+    
+    <html>
+    <head>
+        <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+        <title>{{.title}}</title>
+    </head>
+    
+    <body>
+    <a href="/"><- Back home!</a>
+    <hr>
+    
+    page.html
+    {{include "layout/footer"}}
+    </body>
+    </html>
+```
+
 
 
 Now run the following command to start the Web server:
