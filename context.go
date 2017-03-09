@@ -151,6 +151,43 @@ func (c *Context) PostString(name string) string {
 	return ""
 }
 
+func (c *Context) QueryFormValues() map[string]string  {
+	mapArgs := make(map[string]string, 0)
+	args := c.QueryArgs()
+	if args != nil{
+		args.VisitAll(func(key, val []byte) {
+			mapArgs[string(key)] = string(val)
+		})
+	}
+	return mapArgs
+}
+
+func (c *Context) PostFormValues() map[string]string  {
+	mapArgs := make(map[string]string, 0)
+	args := c.PostArgs()
+	if args != nil{
+		args.VisitAll(func(key, val []byte) {
+			mapArgs[string(key)] = string(val)
+		})
+	}
+	return mapArgs
+}
+
+func (c *Context) MultipartFormValues() map[string]string  {
+	mapArgs := make(map[string]string, 0)
+	mf, err := c.MultipartForm()
+	if err == nil && mf.Value != nil {
+		for k, vv := range mf.Value{
+			if len(vv) > 0 {
+				mapArgs[k] = vv[0]
+			}else{
+				mapArgs[k] = ""
+			}
+		}
+	}
+	return mapArgs
+}
+
 // FormMultiValue returns form value associated with the given key.
 //
 // The value is searched in the following places:
