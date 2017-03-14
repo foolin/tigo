@@ -307,6 +307,8 @@ func (c *Context) Gzip(b []byte, status int) (err error) {
 		if err == nil {
 			c.SetHeader("Content-Encoding", "gzip")
 		}
+	}else{
+		_, err = c.Write(b)
 	}
 	return
 }
