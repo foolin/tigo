@@ -4,7 +4,12 @@
 
 package tigo
 
-import "strings"
+import (
+	"strings"
+	"path/filepath"
+	"os"
+	"net/http"
+)
 
 // RouteGroup represents a group of routes that share the same path prefix.
 type RouteGroup struct {
@@ -70,6 +75,65 @@ func (rg *RouteGroup) Trace(path string, handlers ...Handler) *Route {
 // Any adds a route with the given route, handlers, and the HTTP methods as listed in routing.Methods.
 func (rg *RouteGroup) Any(path string, handlers ...Handler) *Route {
 	return rg.To(strings.Join(Methods, ","), path, handlers...)
+}
+
+
+// Content returns a handler that serves the content of the specified file as the response.
+// The file to be served can be specified as an absolute file path or a path relative to RootPath (which
+// defaults to the current working path).
+// If the specified file does not exist, the handler will pass the control to the next available handler.
+func (rg *RouteGroup) File(path string, filePath string) *Route {
+	return rg.Any(path, func(c *Context) error {
+		if c.Request.Method != "GET" && c.Request.Method != "HEAD" {
+			return NewHTTPError(http.StatusMethodNotAllowed)
+		}
+		file, err := os.Open(filePath)
+		if err != nil {
+			return NewHTTPError(http.StatusNotFound, err.Error())
+		}
+		defer file.Close()
+		fstat, err := file.Stat()
+		if err != nil {
+			return NewHTTPError(http.StatusNotFound, err.Error())
+		} else if fstat.IsDir() {
+			return NewHTTPError(http.StatusNotFound)
+		}
+		http.ServeContent(c.Response, c.Request, filePath, fstat.ModTime(), file)
+		return nil
+	})
+}
+
+// Content returns a handler that serves the content of the specified file as the response.
+// The file to be served can be specified as an absolute file path or a path relative to RootPath (which
+// defaults to the current working path).
+// If the specified file does not exist, the handler will pass the control to the next available handler.
+func (rg *RouteGroup) Static(path string, dir string) *Route {
+	return rg.Any(path, func(c *Context) error {
+		if c.Request.Method != "GET" && c.Request.Method != "HEAD" {
+			return NewHTTPError(http.StatusMethodNotAllowed)
+		}
+		filePath := ""
+		urlPath := c.Request.URL.Path
+		prefix := strings.TrimSuffix(path, "/*")
+		if strings.HasPrefix(urlPath, prefix) {
+			filePath = filepath.Join(dir, urlPath[len(prefix):])
+		}else{
+			return NewHTTPError(http.StatusNotFound)
+		}
+		file, err := os.Open(filePath)
+		if err != nil {
+			return NewHTTPError(http.StatusNotFound, err.Error())
+		}
+		defer file.Close()
+		fstat, err := file.Stat()
+		if err != nil {
+			return NewHTTPError(http.StatusNotFound, err.Error())
+		} else if fstat.IsDir() {
+			return NewHTTPError(http.StatusNotFound)
+		}
+		http.ServeContent(c.Response, c.Request, filePath, fstat.ModTime(), file)
+		return nil
+	})
 }
 
 // To adds a route to the router with the given HTTP methods, route path, and handlers.

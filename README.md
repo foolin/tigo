@@ -22,6 +22,14 @@ This fork adds the following features:
 * add static middleware
 * add more router functions.
 
+## Version
+
+!!! Important, current is v2, v1 is fork Fasthttp-routing, but v2 is fork ozzo-routing.
+if you use v1 version, please use this:
+```
+go get gopkg.in/foolin/tigo.v1
+```
+
 ## Requirements
 
 Go 1.7 or above.

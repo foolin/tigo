@@ -9,6 +9,7 @@ import (
 	"strings"
 	"fmt"
 	"encoding/json"
+	"time"
 )
 
 // Context represents the contextual data and environment while processing an incoming HTTP request.
@@ -240,6 +241,53 @@ func (c *Context) IsAjax() bool {
 	return c.Request.Header.Get("X-Requested-With") == "XMLHttpRequest"
 }
 
+func (c *Context) IsGet() bool {
+	return c.Request.Method == http.MethodGet
+}
+
+func (c *Context) IsPost() bool {
+	return c.Request.Method == http.MethodPost
+}
+
+func (c *Context) GetCookieValue(name string) string {
+	cookie, err := c.Request.Cookie(name)
+	if err != nil {
+		return ""
+	}
+	return cookie.Value
+}
+
+func (c *Context) SetCookieValue(name string, value string, expire time.Time) {
+	cookie := http.Cookie{
+		Name: name,
+		Value: value,
+		Expires: expire,
+	}
+	http.SetCookie(c.Response, &cookie)
+}
+
+func (c *Context) DelCookie(name string) {
+	cookie := http.Cookie{Name: name, Path: "/", MaxAge: -1}
+	http.SetCookie(c.Response, &cookie)
+}
+
+func (c *Context) NotFound() error {
+	return NewHTTPError(http.StatusNotFound)
+}
+
+func (c *Context) Error(err error) {
+	if httpError, ok := err.(HTTPError); ok {
+		c.Response.WriteHeader(httpError.StatusCode())
+	}else{
+		c.Response.WriteHeader(http.StatusInternalServerError)
+	}
+	c.router.handleError(c, err)
+	c.Abort()
+}
+
+func (c *Context) Redirect(uri string, code int) {
+	http.Redirect(c.Response, c.Request, uri, code)
+}
 
 // ClientIp client ip
 func (c *Context) RequestIP() string {
