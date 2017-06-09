@@ -31,7 +31,7 @@ Go 1.5 or above.
 Run the following command to install the package:
 
 ```
-go get github.com/foolin/tigo
+go get gopkg.in/foolin/tigo.v1
 ```
 
 
