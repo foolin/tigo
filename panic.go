@@ -20,9 +20,9 @@ func Panic(writer io.Writer) Handler {
 					"----------- Tigo panic info start --------------\nError:%v\nTime:%v\nUri:%s\nRemote-Addr:%s\n%s\n%s----------- Tigo panic info end --------------\n",
 					err,
 					time.Now().Format(time.RFC3339),
-					ctx.Request.URI(),
-					ctx.RemoteAddr(),
-					ctx.Request.Header.Header(),
+					ctx.Request.URL.RequestURI(),
+					ctx.Request.RemoteAddr,
+					ctx.Request.Header,
 					debug.Stack(),
 				)))
 				//abort next

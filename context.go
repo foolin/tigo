@@ -1,28 +1,35 @@
 // Copyright 2016 Qiang Xue. All rights reserved.
-// Use of this source code is governed by a BSD-style
+// Use of this source code is governed by a MIT-style
 // license that can be found in the LICENSE file.
 
 package tigo
 
 import (
-	"github.com/valyala/fasthttp"
-	"encoding/json"
-	"errors"
-	"strings"
-	"net"
-	"time"
 	"net/http"
+	"strings"
+	"fmt"
+	"encoding/json"
 )
+
 // Context represents the contextual data and environment while processing an incoming HTTP request.
 type Context struct {
-	*fasthttp.RequestCtx
-
+	Request  *http.Request          // the current request
+	Response http.ResponseWriter    // the response writer
 	router   *Router
 	pnames   []string               // list of route parameter names
 	pvalues  []string               // list of parameter values corresponding to pnames
 	data     map[string]interface{} // data items managed by Get and Set
 	index    int                    // the index of the currently executing handler in handlers
 	handlers []Handler              // the handlers associated with the current route
+	writer   DataWriter
+}
+
+// NewContext creates a new Context object with the given response, request, and the handlers.
+// This method is primarily provided for writing unit tests for handlers.
+func NewContext(res http.ResponseWriter, req *http.Request, handlers ...Handler) *Context {
+	c := &Context{handlers: handlers}
+	c.init(res, req)
+	return c
 }
 
 // Router returns the Router that is handling the incoming HTTP request.
@@ -41,6 +48,19 @@ func (c *Context) Param(name string) string {
 	return ""
 }
 
+// SetParam sets the named parameter value.
+// This method is primarily provided for writing unit tests.
+func (c *Context) SetParam(name, value string) {
+	for i, n := range c.pnames {
+		if n == name {
+			c.pvalues[i] = value
+			return
+		}
+	}
+	c.pnames = append(c.pnames, name)
+	c.pvalues = append(c.pvalues, value)
+}
+
 // Get returns the named data item previously registered with the context by calling Set.
 // If the named data item cannot be found, nil will be returned.
 func (c *Context) Get(name string) interface{} {
@@ -53,6 +73,50 @@ func (c *Context) Set(name string, value interface{}) {
 		c.data = make(map[string]interface{})
 	}
 	c.data[name] = value
+}
+
+// Query returns the first value for the named component of the URL query parameters.
+// If key is not present, it returns the specified default value or an empty string.
+func (c *Context) Query(name string, defaultValue ...string) string {
+	if vs, _ := c.Request.URL.Query()[name]; len(vs) > 0 {
+		return vs[0]
+	}
+	if len(defaultValue) > 0 {
+		return defaultValue[0]
+	}
+	return ""
+}
+
+// Form returns the first value for the named component of the query.
+// Form reads the value from POST and PUT body parameters as well as URL query parameters.
+// The form takes precedence over the latter.
+// If key is not present, it returns the specified default value or an empty string.
+func (c *Context) Form(key string, defaultValue ...string) string {
+	r := c.Request
+	r.ParseMultipartForm(32 << 20)
+	if vs := r.Form[key]; len(vs) > 0 {
+		return vs[0]
+	}
+
+	if len(defaultValue) > 0 {
+		return defaultValue[0]
+	}
+	return ""
+}
+
+// PostForm returns the first value for the named component from POST and PUT body parameters.
+// If key is not present, it returns the specified default value or an empty string.
+func (c *Context) PostForm(key string, defaultValue ...string) string {
+	r := c.Request
+	r.ParseMultipartForm(32 << 20)
+	if vs := r.PostForm[key]; len(vs) > 0 {
+		return vs[0]
+	}
+
+	if len(defaultValue) > 0 {
+		return defaultValue[0]
+	}
+	return ""
 }
 
 // Next calls the rest of the handlers associated with the current route.
@@ -82,185 +146,55 @@ func (c *Context) Abort() {
 // Parameter values will be properly URL encoded.
 // The method returns an empty string if the URL creation fails.
 func (c *Context) URL(route string, pairs ...interface{}) string {
-	if r := c.router.routes[route]; r != nil {
+	if r := c.router.namedRoutes[route]; r != nil {
 		return r.URL(pairs...)
 	}
 	return ""
 }
 
-
-// RequestHeader returns the request header's value
-// accepts one parameter, the key of the header (string)
-// returns string
-func (c *Context) RequestHeader(key string) string {
-	val := c.Request.Header.Peek(key)
-	return string(val)
-}
-
-// RequestIP gets just the Remote Address from the client.
-func (c *Context) RequestIP() string {
-	if ip, _, err := net.SplitHostPort(strings.TrimSpace(c.RequestCtx.RemoteAddr().String())); err == nil {
-		return ip
-	}
-	return ""
-}
-
-// RemoteAddr is like RequestIP but it checks for proxy servers also, tries to get the real client's request IP
-func (c *Context) RemoteAddr() string {
-	header := string(c.RequestCtx.Request.Header.Peek("X-Real-Ip"))
-	realIP := strings.TrimSpace(header)
-	if realIP != "" {
-		return realIP
-	}
-	realIP = string(c.RequestCtx.Request.Header.Peek("X-Forwarded-For"))
-	idx := strings.IndexByte(realIP, ',')
-	if idx >= 0 {
-		realIP = realIP[0:idx]
-	}
-	realIP = strings.TrimSpace(realIP)
-	if realIP != "" {
-		return realIP
-	}
-	return c.RequestIP()
-}
-
-// QueryString returns the query value of a single key/name
-func (c *Context) QueryString(key string) string {
-	val := c.QueryArgs().Peek(key)
-	return string(val)
-}
-
-// QueryMultiString returns query value associated with the given key.
-func (c *Context) QueryMultiString(key string) []string {
-	arrBytes := c.QueryArgs().PeekMulti(key)
-	return arrBytes2Strs(arrBytes)
-}
-
-// PostMultiString returns the post data values as []string of a single key/name
-func (c *Context) PostMultiString(name string) []string {
-	arrBytes := c.PostArgs().PeekMulti(name)
-	return arrBytes2Strs(arrBytes)
-}
-
-// PostString returns the post data value of a single key/name
-// returns an empty string if nothing found
-func (c *Context) PostString(name string) string {
-	if v := c.PostMultiString(name); len(v) > 0 {
-		return v[0]
-	}
-	return ""
-}
-
-func (c *Context) QueryFormValues() map[string]string  {
-	mapArgs := make(map[string]string, 0)
-	args := c.QueryArgs()
-	if args != nil{
-		args.VisitAll(func(key, val []byte) {
-			mapArgs[string(key)] = string(val)
-		})
-	}
-	return mapArgs
-}
-
-func (c *Context) PostFormValues() map[string]string  {
-	mapArgs := make(map[string]string, 0)
-	args := c.PostArgs()
-	if args != nil{
-		args.VisitAll(func(key, val []byte) {
-			mapArgs[string(key)] = string(val)
-		})
-	}
-	return mapArgs
-}
-
-func (c *Context) MultipartFormValues() map[string]string  {
-	mapArgs := make(map[string]string, 0)
-	mf, err := c.MultipartForm()
-	if err == nil && mf.Value != nil {
-		for k, vv := range mf.Value{
-			if len(vv) > 0 {
-				mapArgs[k] = vv[0]
-			}else{
-				mapArgs[k] = ""
-			}
+// Read populates the given struct variable with the data from the current request.
+// If the request is NOT a GET request, it will check the "Content-Type" header
+// and find a matching reader from DataReaders to read the request data.
+// If there is no match or if the request is a GET request, it will use DefaultFormDataReader
+// to read the request data.
+func (c *Context) Read(data interface{}) error {
+	if c.Request.Method != "GET" {
+		t := getContentType(c.Request)
+		if reader, ok := DataReaders[t]; ok {
+			return reader.Read(c.Request, data)
 		}
 	}
-	return mapArgs
+
+	return DefaultFormDataReader.Read(c.Request, data)
 }
 
-// FormMultiValue returns form value associated with the given key.
-//
-// The value is searched in the following places:
-//
-//   * Query string.
-//   * POST or PUT body.
-//
-// There are more fine-grained methods for obtaining form values:
-//
-//   * QueryArgs for obtaining values from query string.
-//   * PostArgs for obtaining values from POST or PUT body.
-//   * MultipartForm for obtaining values from multipart form.
-//   * FormFile for obtaining uploaded files.
-//
-// The returned value is valid until returning from RequestHandler.
-func (c *Context) FormMultiValue(key string) [][]byte {
-	arr := make([][]byte, 0)
-	mv := c.QueryArgs().PeekMulti(key)
-	if len(mv) > 0 {
-		arr = append(arr, mv...)
-	}
-	mv = c.PostArgs().PeekMulti(key)
-	if len(mv) > 0 {
-		arr = append(arr, mv...)
-	}
-	mf, err := c.MultipartForm()
-	if err == nil && mf.Value != nil {
-		mstrs := mf.Value[key]
-		if len(mstrs) > 0 {
-			for _, v := range mstrs {
-				arr = append(arr, []byte(v))
-			}
-		}
-	}
-	return arr
+// Write writes the given data of arbitrary type to the response.
+// The method calls the data writer set via SetDataWriter() to do the actual writing.
+// By default, the DefaultDataWriter will be used.
+func (c *Context) Write(data interface{}) error {
+	return c.writer.Write(c.Response, data)
 }
 
-// FormString returns a single value, as string, from post request's data
-func (c *Context) FormString(name string) string {
-	return string(c.FormValue(name))
+// SetDataWriter sets the data writer that will be used by Write().
+func (c *Context) SetDataWriter(writer DataWriter) {
+	c.writer = writer
 }
 
-// FormMultiString returns form value associated with the given key.
-//
-// The value is searched in the following places:
-//
-//   * Query string.
-//   * POST or PUT body.
-//
-// There are more fine-grained methods for obtaining form values:
-//
-//   * QueryArgs for obtaining values from query string.
-//   * PostArgs for obtaining values from POST or PUT body.
-//   * MultipartForm for obtaining values from multipart form.
-//   * FormFile for obtaining uploaded files.
-//
-// The returned value is valid until returning from RequestHandler.
-func (c *Context) FormMultiString(key string) []string {
-	arrBytes := c.FormMultiValue(key)
-	return arrBytes2Strs(arrBytes)
-}
-
-// SetHeader set resposne header, use Add for setting multiple header values under the same key.
-func (c *Context) SetHeader(key, value string) {
-	c.Response.Header.Set(key, value)
+// init sets the request and response of the context and resets all other properties.
+func (c *Context) init(response http.ResponseWriter, request *http.Request) {
+	c.Response = response
+	c.Request = request
+	c.data = nil
+	c.index = -1
+	c.writer = DefaultDataWriter
 }
 
 // writeWithStatusCode writes the given data of arbitrary type to the response.
 // The method calls the Serialize() method to convert the data into a byte array and then writes
 // the byte array to the response.
 func (c *Context) writeWithContentType(contentType string, bytes []byte) error {
-	c.SetContentType(contentType)
-	_, err := c.Write(bytes)
+	c.Response.Header().Set("Content-Type", contentType)
+	_, err := c.Response.Write(bytes)
 	if err != nil {
 		return err
 	}
@@ -287,7 +221,7 @@ func (c *Context) HTML(content string) error {
 }
 
 func (c *Context) clientAllowsGzip() bool {
-	if h := c.RequestHeader("Accept-Encoding"); h != "" {
+	if h := c.Request.Header.Get("Accept-Encoding"); h != "" {
 		for _, v := range strings.Split(h, ";") {
 			if strings.Contains(v, "gzip") {
 				// we do Contains because sometimes browsers has the q=, we don't use it atm. || strings.Contains(v,"deflate"){
@@ -299,34 +233,27 @@ func (c *Context) clientAllowsGzip() bool {
 	return false
 }
 
-// Gzip accepts bytes, which are compressed to gzip format and sent to the client
-func (c *Context) Gzip(b []byte, status int) (err error) {
-	c.RequestCtx.Response.Header.Add("Vary", "Accept-Encoding")
-	if c.clientAllowsGzip() {
-		_, err = fasthttp.WriteGzip(c.RequestCtx.Response.BodyWriter(), b)
-		if err == nil {
-			c.SetHeader("Content-Encoding", "gzip")
-		}
-	}else{
-		_, err = c.Write(b)
-	}
-	return
-}
-
 // IsAjax returns true if this request is an 'ajax request'( XMLHttpRequest)
 //
 // Read more at: http://www.w3schools.com/ajax/
 func (c *Context) IsAjax() bool {
-	return c.RequestHeader("X-Requested-With") == "XMLHttpRequest"
+	return c.Request.Header.Get("X-Requested-With") == "XMLHttpRequest"
 }
 
-// BindJson post for json
-func (c *Context) BindJson(out interface{}) error {
-	bytes := c.Request.Body()
-	if len(bytes) <= 0 {
-		return nil
+
+// ClientIp client ip
+func (c *Context) RequestIP() string {
+	ip := c.Request.Header.Get("X-Real-IP")
+	if ip == "" {
+		ip = c.Request.Header.Get("X-Forwarded-For")
+		if ip == "" {
+			ip = c.Request.RemoteAddr
+		}
 	}
-	return json.Unmarshal(bytes, &out)
+	if colon := strings.LastIndex(ip, ":"); colon != -1 {
+		ip = ip[:colon]
+	}
+	return ip
 }
 
 // Render render with master
@@ -342,64 +269,25 @@ func (c *Context) RenderFile(name string, data interface{}) error {
 
 func (c *Context) doRender(name string, data interface{}, isRenderFile bool) error {
 	if c.router.render == nil {
-		return errors.New("Render engine not found.")
+		return fmt.Errorf("Render engine not found.")
 	}
-	contentType := string(c.Response.Header.ContentType())
-	if contentType == "" || !strings.Contains(contentType, "text/html"){
-		c.SetContentType("text/html; charset=utf-8")
+	contentType := getContentType(c.Request)
+	if contentType == "" || !strings.Contains(contentType, "text/html") {
+		c.Response.Header().Set("Content-Type", "text/html; charset=utf-8")
 	}
-	if isRenderFile{
-		return c.router.render.RenderFile(c.Response.BodyWriter(), name, data)
-	}else{
-		return c.router.render.Render(c.Response.BodyWriter(), name, data)
+	if isRenderFile {
+		return c.router.render.RenderFile(c.Response, name, data)
+	} else {
+		return c.router.render.Render(c.Response, name, data)
 	}
 }
 
-// init sets the request and response of the context and resets all other properties.
-func (c *Context) init(ctx *fasthttp.RequestCtx) {
-	c.RequestCtx = ctx
-	c.data = nil
-	c.index = -1
-}
-
-func arrBytes2Strs(arrBytes [][]byte) []string {
-	arrStr := make([]string, len(arrBytes))
-	for i, v := range arrBytes {
-		arrStr[i] = string(v)
+func getContentType(req *http.Request) string {
+	t := req.Header.Get("Content-Type")
+	for i, c := range t {
+		if c == ' ' || c == ';' {
+			return t[:i]
+		}
 	}
-	return arrStr
-}
-
-func (c *Context) GetCookieValue(key string) string {
-	return string(c.Request.Header.Cookie(key))
-}
-
-func (c *Context) SetCookieValue(key string, value string, expire time.Time) {
-	cookie := &fasthttp.Cookie{}
-	cookie.SetKey(key)
-	cookie.SetValue(value)
-	cookie.SetExpire(expire)
-	c.Response.Header.SetCookie(cookie)
-}
-
-func (c *Context) DelCookie(key string) {
-	c.Response.Header.DelCookie(key)
-}
-
-func (c *Context) NotFound() error {
-	return c.router.OnNotFound(c)
-}
-
-func (c *Context) Error(err error) {
-	if httpError, ok := err.(HTTPError); ok {
-		c.RequestCtx.Response.SetStatusCode(httpError.StatusCode())
-	}else{
-		c.RequestCtx.Response.SetStatusCode(http.StatusInternalServerError)
-	}
-	c.router.OnError(c, err)
-	c.Abort()
-}
-
-func (ctx *Context) Redirect(uri string) {
-	ctx.RequestCtx.Redirect(uri, http.StatusOK)
+	return t
 }
