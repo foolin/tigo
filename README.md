@@ -42,6 +42,10 @@ Run the following command to install the package:
 go get gopkg.in/foolin/tigo.v2
 ```
 
+Or last version(developer):
+```
+go get github.com/foolin/tigo
+```
 
 ## Getting Started
 
