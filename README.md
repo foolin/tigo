@@ -5,7 +5,7 @@
 
 ## Description
 
-Tigo is a tiny framework for go, is forked from [Fasthttp-routing](https://github.com/qiangxue/fasthttp-routing) which is a lightweight high performance HTTP request router, fast and powerful routing features for the high-performance.
+Tigo is a tiny framework for go, is forked from [ozzo-routing](https://github.com/go-ozzo/ozzo-routing) which is a lightweight high performance HTTP request router, fast and powerful routing features for the high-performance.
 The package has the following features:
 
 * middleware pipeline architecture, similar to that of the [Express framework](http://expressjs.com).
@@ -31,7 +31,7 @@ Go 1.5 or above.
 Run the following command to install the package:
 
 ```
-go get gopkg.in/foolin/tigo.v1
+go get gopkg.in/foolin/tigo.v2
 ```
 
 
