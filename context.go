@@ -285,8 +285,8 @@ func (c *Context) Error(err error) {
 	c.Abort()
 }
 
-func (c *Context) Redirect(uri string, code int) {
-	http.Redirect(c.Response, c.Request, uri, code)
+func (c *Context) Redirect(uri string) {
+	http.Redirect(c.Response, c.Request, uri, http.StatusTemporaryRedirect)
 }
 
 // ClientIp client ip
