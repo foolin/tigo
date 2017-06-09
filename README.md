@@ -24,7 +24,7 @@ This fork adds the following features:
 
 ## Requirements
 
-Go 1.5 or above.
+Go 1.7 or above.
 
 ## Installation
 
