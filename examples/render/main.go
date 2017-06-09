@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/foolin/tigo"
+	"gopkg.in/foolin/tigo.v1"
 	"log"
 	"html/template"
 )

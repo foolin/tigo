@@ -10,7 +10,7 @@ import (
 	"strings"
 	"io/ioutil"
 	"html/template"
-	"github.com/foolin/tigo"
+	"gopkg.in/foolin/tigo.v1"
 )
 
 // HtmlRender implements Render interface, but based on golang templates.

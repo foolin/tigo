@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/foolin/tigo"
 	"log"
+	"gopkg.in/foolin/tigo.v1"
 )
 
 func main()  {
