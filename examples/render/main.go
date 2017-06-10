@@ -12,7 +12,7 @@ func main() {
 	router := tigo.New()
 
 	//set render, tigo.Default() will default initialize.
-	router.SetRender(tigo.NewViewRender(tigo.ViewRenderConfig{
+	router.Render = tigo.NewViewRender(tigo.ViewRenderConfig{
 		Root: "views",
 		Extension: ".html",
 		Master: "layout/master",
@@ -24,7 +24,7 @@ func main() {
 		},
 		DisableCache: false,
 		DisableFilePartial: false,
-	}))
+	})
 
 	//register router
 	router.Get("/", func(ctx *tigo.Context) error {

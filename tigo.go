@@ -24,7 +24,8 @@ func Default() *Router {
 	//panic
 	r.Use(Panic(os.Stderr))
 	//tempate
-	r.render = NewViewRender(ViewRenderConfig{
+
+	r.Render = NewViewRender(ViewRenderConfig{
 		Root: "views",
 		Extension: ".html",
 		Master: "master",
@@ -40,8 +41,8 @@ func (r *Router) Run(addr string) error {
 	if addr == "" {
 		addr = ":8080"
 	}
-	if r.render != nil {
-		err := r.render.Init()
+	if r.Render != nil {
+		err := r.Render.Init()
 		if err != nil {
 			return err
 		}

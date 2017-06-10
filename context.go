@@ -276,11 +276,6 @@ func (c *Context) NotFound() error {
 }
 
 func (c *Context) Error(err error) {
-	if httpError, ok := err.(HTTPError); ok {
-		c.Response.WriteHeader(httpError.StatusCode())
-	}else{
-		c.Response.WriteHeader(http.StatusInternalServerError)
-	}
 	c.router.handleError(c, err)
 	c.Abort()
 }
@@ -316,7 +311,7 @@ func (c *Context) RenderFile(name string, data interface{}) error {
 }
 
 func (c *Context) doRender(name string, data interface{}, isRenderFile bool) error {
-	if c.router.render == nil {
+	if c.router.Render == nil {
 		return fmt.Errorf("Render engine not found.")
 	}
 	contentType := getContentType(c.Request)
@@ -324,9 +319,9 @@ func (c *Context) doRender(name string, data interface{}, isRenderFile bool) err
 		c.Response.Header().Set("Content-Type", "text/html; charset=utf-8")
 	}
 	if isRenderFile {
-		return c.router.render.RenderFile(c.Response, name, data)
+		return c.router.Render.RenderFile(c.Response, name, data)
 	} else {
-		return c.router.render.Render(c.Response, name, data)
+		return c.router.Render.Render(c.Response, name, data)
 	}
 }
 

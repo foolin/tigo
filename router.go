@@ -16,9 +16,14 @@ type (
 	// Handler is the function for handling HTTP requests.
 	Handler func(*Context) error
 
+	// ErrorHandler is function for handling error.
+	ErrorHandler func(*Context, error)
+
 	// Router manages routes and dispatches HTTP requests to the handlers of the matching routes.
 	Router struct {
 		RouteGroup
+		Render              Render
+		OnError             ErrorHandler
 		IgnoreTrailingSlash bool // whether to ignore trailing slashes in the end of the request URL
 		pool                sync.Pool
 		routes              []*Route
@@ -27,7 +32,6 @@ type (
 		maxParams           int
 		notFound            []Handler
 		notFoundHandlers    []Handler
-		render              Render
 	}
 
 	// routeStore stores route paths and the corresponding handlers.
@@ -107,9 +111,18 @@ func (r *Router) NotFound(handlers ...Handler) {
 // handleError is the error handler for handling any unhandled errors.
 func (r *Router) handleError(c *Context, err error) {
 	if httpError, ok := err.(HTTPError); ok {
-		http.Error(c.Response, httpError.Error(), httpError.StatusCode())
-	} else {
-		http.Error(c.Response, err.Error(), http.StatusInternalServerError)
+		c.Response.WriteHeader(httpError.StatusCode())
+	}else{
+		c.Response.WriteHeader(http.StatusInternalServerError)
+	}
+	if r.OnError != nil{
+		r.OnError(c, err)
+	}else{
+		if httpError, ok := err.(HTTPError); ok {
+			http.Error(c.Response, httpError.Error(), httpError.StatusCode())
+		} else {
+			http.Error(c.Response, err.Error(), http.StatusInternalServerError)
+		}
 	}
 }
 
@@ -166,15 +179,6 @@ func (r *Router) normalizeRequestPath(path string) string {
 		return path[0:1]
 	}
 	return path
-}
-
-// SetRender set render engine for Render()
-func (r *Router) SetRender(render Render) {
-	r.render = render
-}
-
-func (r *Router) Render() Render {
-	return r.render
 }
 
 // NotFoundHandler returns a 404 HTTP error indicating a request has no matching route.
