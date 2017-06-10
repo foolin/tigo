@@ -271,10 +271,6 @@ func (c *Context) DelCookie(name string) {
 	http.SetCookie(c.Response, &cookie)
 }
 
-func (c *Context) NotFound() error {
-	return NewHTTPError(http.StatusNotFound)
-}
-
 func (c *Context) Error(err error) {
 	c.router.handleError(c, err)
 	c.Abort()
