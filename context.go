@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"encoding/json"
 	"time"
+	"io/ioutil"
 )
 
 // Context represents the contextual data and environment while processing an incoming HTTP request.
@@ -86,6 +87,16 @@ func (c *Context) Query(name string, defaultValue ...string) string {
 		return defaultValue[0]
 	}
 	return ""
+}
+
+//Get Request body value
+func (c *Context) RequestBody() ([]byte, error) {
+	body, err := c.Request.GetBody()
+	if err != nil {
+		return nil, err
+	}
+	defer body.Close()
+	return ioutil.ReadAll(body)
 }
 
 // Form returns the first value for the named component of the query.
