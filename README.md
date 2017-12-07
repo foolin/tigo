@@ -22,14 +22,6 @@ This fork adds the following features:
 * add static middleware
 * add more router functions.
 
-## Version
-
-!!! Important, current is v2, v1 is fork Fasthttp-routing, but v2 is fork ozzo-routing.
-if you use v1 version, please use this:
-```
-go get gopkg.in/foolin/tigo.v1
-```
-
 ## Requirements
 
 Go 1.7 or above.
@@ -51,6 +43,15 @@ go get github.com/foolin/tigo
 
 #### Default example:
 ```go
+
+package main
+
+import (
+	"github.com/foolin/tigo"
+	"log"
+)
+
+func main()  {
 
 	router := tigo.Default()
 
@@ -77,6 +78,7 @@ go get github.com/foolin/tigo
 	if err != nil {
 		log.Fatalf("run error: %v", err)
 	}
+}
 	
 ```
 
@@ -84,6 +86,15 @@ go get github.com/foolin/tigo
 #### New example:
 ```go
 
+package main
+
+import (
+	"github.com/foolin/tigo"
+	"os"
+	"log"
+)
+
+func main()  {
 	//new router
 	router := tigo.New()
 
@@ -104,6 +115,8 @@ go get github.com/foolin/tigo
 	if err != nil {
 		log.Fatalf("run error: %v", err)
 	}
+}
+
 ```
 
 
@@ -113,10 +126,21 @@ Use context.Render()
 
 ```go
 
+package main
+
+import (
+	"github.com/foolin/tigo"
+	"log"
+	"html/template"
+)
+
+func main() {
+
 	//new router
 	router := tigo.New()
 
-	router.SetRender(tigo.NewViewRender(tigo.ViewRenderConfig{
+	//set render, tigo.Default() will default initialize.
+	router.Render = tigo.NewViewRender(tigo.ViewRenderConfig{
 		Root: "views",
 		Extension: ".html",
 		Master: "layout/master",
@@ -128,8 +152,8 @@ Use context.Render()
 		},
 		DisableCache: false,
 		DisableFilePartial: false,
-	}))
-	
+	})
+
 	//register router
 	router.Get("/", func(ctx *tigo.Context) error {
 		return ctx.Render("index", tigo.M{
@@ -150,6 +174,7 @@ Use context.Render()
 	if err != nil {
 		log.Fatalf("run error: %v", err)
 	}
+}
 	
 ```
 
@@ -421,6 +446,14 @@ handlers are registered with `Router.NotFound()`:
 * `tigo.MethodNotAllowedHandler`: a handler that sends an `Allow` HTTP header indicating the allowed HTTP methods for a requested URL
 * `tigo.NotFoundHandler`: a handler triggering 404 HTTP error
 
+
+## Version
+
+!!! Important, current is v2, v1 is fork Fasthttp-routing, but v2 is fork ozzo-routing.
+if you use v1 version, please use this:
+```
+go get gopkg.in/foolin/tigo.v1
+```
 
 ## Docs
 

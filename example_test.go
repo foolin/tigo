@@ -39,7 +39,7 @@ func Example() {
 	})
 
 	// serve index file
-	router.Get("/", file.Content("ui/index.html"))
+	router.Get("/", file.Content("ui/list.html"))
 	// serve files under the "ui" subdirectory
 	router.Get("/*", file.Server(file.PathMap{
 		"/": "/ui/",
