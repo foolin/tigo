@@ -55,7 +55,7 @@ func main()  {
 
 	router := tigo.Default()
 
-	router.Get("/", func(ctx *tigo.Context) error {
+	router.GET("/", func(ctx *tigo.Context) error {
 		//out html
 		return ctx.HTML(`
 			Hello tigo!!!<hr>
@@ -63,7 +63,7 @@ func main()  {
 		`)
 	})
 
-	router.Get("/api/<action>", func(ctx *tigo.Context) error {
+	router.GET("/api/<action>", func(ctx *tigo.Context) error {
 		//out json
 		return ctx.JSON(tigo.M{
 			"name": "tigo",
@@ -105,7 +105,7 @@ func main()  {
 	router.Use(tigo.Panic(os.Stderr))
 
 	//register router
-	router.Get("/", func(ctx *tigo.Context) error {
+	router.GET("/", func(ctx *tigo.Context) error {
 		return ctx.HTML("Hello tigo!!!")
 	})
 
@@ -155,7 +155,7 @@ func main() {
 	})
 
 	//register router
-	router.Get("/", func(ctx *tigo.Context) error {
+	router.GET("/", func(ctx *tigo.Context) error {
 		return ctx.Render("index", tigo.M{
 			"title": "Index title!",
 			"escape": func(content string) string {
@@ -164,7 +164,7 @@ func main() {
 		})
 	})
 
-	router.Get("/page_file", func(ctx *tigo.Context) error {
+	router.GET("/page_file", func(ctx *tigo.Context) error {
 		return ctx.RenderFile("page_file", tigo.M{"title": "Page file title!!"})
 	})
 
