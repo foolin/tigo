@@ -20,7 +20,7 @@ func main()  {
 		ctx.HTML(fmt.Sprintf("^_^!!! 500 Server Error! %v", err.Error()))
 	}
 
-	router.Get("/err", func(ctx *tigo.Context) error {
+	router.GET("/err", func(ctx *tigo.Context) error {
 		a := 1
 		b := 0
 		c := a / b

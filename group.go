@@ -28,47 +28,47 @@ func newRouteGroup(prefix string, router *Router, handlers []Handler) *RouteGrou
 }
 
 // Get adds a GET route to the router with the given route path and handlers.
-func (rg *RouteGroup) Get(path string, handlers ...Handler) *Route {
+func (rg *RouteGroup) GET(path string, handlers ...Handler) *Route {
 	return rg.add("GET", path, handlers)
 }
 
 // Post adds a POST route to the router with the given route path and handlers.
-func (rg *RouteGroup) Post(path string, handlers ...Handler) *Route {
+func (rg *RouteGroup) POST(path string, handlers ...Handler) *Route {
 	return rg.add("POST", path, handlers)
 }
 
 // Put adds a PUT route to the router with the given route path and handlers.
-func (rg *RouteGroup) Put(path string, handlers ...Handler) *Route {
+func (rg *RouteGroup) PUT(path string, handlers ...Handler) *Route {
 	return rg.add("PUT", path, handlers)
 }
 
 // Patch adds a PATCH route to the router with the given route path and handlers.
-func (rg *RouteGroup) Patch(path string, handlers ...Handler) *Route {
+func (rg *RouteGroup) PATCH(path string, handlers ...Handler) *Route {
 	return rg.add("PATCH", path, handlers)
 }
 
 // Delete adds a DELETE route to the router with the given route path and handlers.
-func (rg *RouteGroup) Delete(path string, handlers ...Handler) *Route {
+func (rg *RouteGroup) DELETE(path string, handlers ...Handler) *Route {
 	return rg.add("DELETE", path, handlers)
 }
 
 // Connect adds a CONNECT route to the router with the given route path and handlers.
-func (rg *RouteGroup) Connect(path string, handlers ...Handler) *Route {
+func (rg *RouteGroup) CONNECT(path string, handlers ...Handler) *Route {
 	return rg.add("CONNECT", path, handlers)
 }
 
 // Head adds a HEAD route to the router with the given route path and handlers.
-func (rg *RouteGroup) Head(path string, handlers ...Handler) *Route {
+func (rg *RouteGroup) HEAD(path string, handlers ...Handler) *Route {
 	return rg.add("HEAD", path, handlers)
 }
 
 // Options adds an OPTIONS route to the router with the given route path and handlers.
-func (rg *RouteGroup) Options(path string, handlers ...Handler) *Route {
+func (rg *RouteGroup) OPTIONS(path string, handlers ...Handler) *Route {
 	return rg.add("OPTIONS", path, handlers)
 }
 
 // Trace adds a TRACE route to the router with the given route path and handlers.
-func (rg *RouteGroup) Trace(path string, handlers ...Handler) *Route {
+func (rg *RouteGroup) TRACE(path string, handlers ...Handler) *Route {
 	return rg.add("TRACE", path, handlers)
 }
 

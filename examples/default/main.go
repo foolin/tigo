@@ -9,7 +9,7 @@ func main()  {
 
 	router := tigo.Default()
 
-	router.Get("/", func(ctx *tigo.Context) error {
+	router.GET("/", func(ctx *tigo.Context) error {
 		//out html
 		return ctx.HTML(`
 			Hello tigo!!!<hr>
@@ -17,7 +17,7 @@ func main()  {
 		`)
 	})
 
-	router.Get("/api/<action>", func(ctx *tigo.Context) error {
+	router.GET("/api/<action>", func(ctx *tigo.Context) error {
 		//out json
 		return ctx.JSON(tigo.M{
 			"name": "tigo",

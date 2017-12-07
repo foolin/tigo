@@ -17,7 +17,7 @@ func main()  {
 	router.Use(tigo.Panic(os.Stderr))
 
 	//register router
-	router.Get("/", func(ctx *tigo.Context) error {
+	router.GET("/", func(ctx *tigo.Context) error {
 		return ctx.HTML("Hello tigo!!!")
 	})
 
