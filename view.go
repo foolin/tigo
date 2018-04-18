@@ -82,38 +82,38 @@ func (r *ViewRender) execute(out io.Writer, name string, data interface{}, useMa
 	}
 
 	if !ok || r.config.DisableCache {
-		tplList := []string{name}
-		if useMaster{
+
+		tplList := make([]string, 0)
+		if useMaster {
 			//render()
-			if r.config.Master != ""{
+			if r.config.Master != "" {
 				tplList = append(tplList, r.config.Master)
 			}
-			tplList = append(tplList, r.config.Partials...)
-		}else{
-			//renderFile()
-			if !r.config.DisableFilePartial{
-				tplList = append(tplList, r.config.Partials...)
-			}
 		}
-
+		tplList = append(tplList, name)
+		tplList = append(tplList, r.config.Partials...)
 
 		// Loop through each template and test the full path
-		tpl = template.New(name)
+		tpl = template.New(name).Funcs(allFuncs)
 		for _, v := range tplList {
 			// Get the absolute path of the root template
 			path, err := filepath.Abs(r.config.Root + string(os.PathSeparator) + v + r.config.Extension)
 			if err != nil {
-				return fmt.Errorf("ViewRender path:%v error: %v", path, err)
+				return fmt.Errorf("TemplateEngine path:%v error: %v", path, err)
 			}
 			data, err := ioutil.ReadFile(path)
 			if err != nil {
-				return fmt.Errorf("ViewRender render read name:%v, path:%v, error: %v", v, path, err)
+				return fmt.Errorf("TemplateEngine render read name:%v, path:%v, error: %v", v, path, err)
 			}
-			t := tpl.New(v)
-			content := fmt.Sprintf("%s", data)
-			_, err = t.Funcs(allFuncs).Parse(content)
+			var tmpl *template.Template
+			if v == name {
+				tmpl = tpl
+			} else {
+				tmpl = tpl.New(v)
+			}
+			_, err = tmpl.Parse(string(data))
 			if err != nil {
-				return fmt.Errorf("ViewRender render parser name:%v, path:%v, error: %v", v, path, err)
+				return fmt.Errorf("TemplateEngine render parser name:%v, path:%v, error: %v", v, path, err)
 			}
 		}
 		r.tplMutex.Lock()
